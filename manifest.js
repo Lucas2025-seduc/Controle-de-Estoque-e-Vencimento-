@@ -1,6 +1,6 @@
 {
   "name": "Nexus Controle de Estoque e Vencimento",
-  "short_name": "Nexus",
+  "short_name": "StockControl",
   "description": "Aplicativo desenvolvido por Lucas Sebastião Barbosa Silva para gestão de estoque e vencimento.",
   "id": "nexus-estoque-v2",
   "start_url": "./index.html",
@@ -55,3 +55,4 @@
   "categories": ["productivity", "business", "finance"],
   "lang": "pt-BR"
 }
+
