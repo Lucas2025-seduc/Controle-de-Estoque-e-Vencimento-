@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Enterprise 2.0 - Gestão de Estoque</title>
+    <title>Nexus Enterprise 3.7 - Acesso Seguro</title>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0f172a">
-    <meta name="description" content="Sistema profissional de gestão de estoque, entradas, saídas e relatórios.">
+    <meta name="description" content="Sistema profissional de gestão de estoque com controle de permissões.">
     <link rel="manifest" href="./manifest.json">
     
     <!-- Ícones e Estilos -->
@@ -26,12 +26,12 @@
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #6366f1; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
+        
         /* Estilos de Impressão Profissional */
         @media print {
             @page { size: A4; margin: 1cm; }
             body { background: white; font-size: 10pt; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .no-print, nav, .fixed, button, #toast, #filterType, #filterStatus, #searchInput, .card-actions { display: none !important; }
+            .no-print, nav, .fixed, button, #toast, #filterType, #filterStatus, #searchInput, .card-actions, #loginOverlay, #passwordModal { display: none !important; }
             #reportModal { position: static !important; display: block !important; background: white !important; height: auto !important; overflow: visible !important; }
             #reportContent { box-shadow: none !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
@@ -39,7 +39,6 @@
             th { background-color: #f1f5f9 !important; font-weight: bold; text-transform: uppercase; font-size: 8pt; }
             .page-break { page-break-before: always; }
             
-            /* Cores de Fundo para Impressão */
             .print-bg-black { background-color: #000 !important; color: #fff !important; }
             .print-bg-red { background-color: #fee2e2 !important; color: #991b1b !important; }
             .print-bg-orange { background-color: #ffedd5 !important; color: #9a3412 !important; }
@@ -50,6 +49,57 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
+    <!-- TELA DE LOGIN -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-[1000] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+            <div class="bg-indigo-600 p-8 text-center">
+                <div class="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                    <i class="fa-solid fa-cube text-3xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Nexus Enterprise 3.7</h1>
+                <p class="text-indigo-200 text-sm">Selecione seu perfil de acesso</p>
+            </div>
+            
+            <div class="p-8 space-y-4">
+                <button onclick="selectRole('admin')" class="w-full flex items-center p-4 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition group text-left">
+                    <div class="bg-slate-100 p-3 rounded-lg group-hover:bg-white text-slate-500 group-hover:text-indigo-600 transition"><i class="fa-solid fa-crown text-xl"></i></div>
+                    <div class="ml-4">
+                        <h3 class="font-bold text-slate-800">Administrador</h3>
+                        <p class="text-xs text-slate-500">Acesso Total (Requer Senha)</p>
+                    </div>
+                </button>
+
+                <button onclick="selectRole('operator')" class="w-full flex items-center p-4 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition group text-left">
+                    <div class="bg-slate-100 p-3 rounded-lg group-hover:bg-white text-slate-500 group-hover:text-emerald-600 transition"><i class="fa-solid fa-user-gear text-xl"></i></div>
+                    <div class="ml-4">
+                        <h3 class="font-bold text-slate-800">Operador</h3>
+                        <p class="text-xs text-slate-500">Movimentar, Editar Estoque</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE SENHA (NOVO) -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/90 z-[1100] hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-xl p-6 w-full max-w-xs text-center shadow-2xl">
+            <div class="mb-4 text-indigo-600">
+                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto">
+                    <i class="fa-solid fa-lock text-xl"></i>
+                </div>
+            </div>
+            <h3 class="font-bold text-lg mb-1 text-slate-800">Senha de Administrador</h3>
+            <p class="text-xs text-slate-500 mb-4">Digite sua senha segura</p>
+            
+            <input type="password" id="adminPassInput" class="w-full border-2 border-slate-200 p-3 rounded-xl mb-4 text-center focus:border-indigo-500 outline-none font-bold text-lg text-slate-700" placeholder="••••••••">
+            
+            <div class="flex gap-2">
+                <button onclick="closePasswordModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-600 transition">Voltar</button>
+                <button onclick="confirmAdminLogin()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl font-bold text-white transition shadow-lg shadow-indigo-200">Entrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Navegação -->
     <nav class="bg-slate-900 text-white shadow-lg z-50 no-print flex-shrink-0">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -59,26 +109,34 @@
                     <div id="licenseDot" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">Nexus 2.0 <span id="proBadge" class="hidden text-[10px] bg-amber-500 px-1 rounded ml-1 text-black">PRO</span></h1>
-                    <p class="text-[10px] text-slate-400">Gestão Inteligente</p>
+                    <h1 class="text-lg font-bold leading-tight">Nexus <span id="userRoleBadge" class="text-[10px] bg-slate-700 px-2 py-0.5 rounded ml-1 text-white uppercase tracking-wider">VISITANTE</span></h1>
+                    <p class="text-[10px] text-slate-400">ID: <span id="navDeviceId">...</span></p>
                 </div>
             </div>
             
-            <div class="flex gap-2 md:gap-3">
-                <button onclick="openMovementModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30">
-                    <i class="fa-solid fa-right-left"></i> <span class="hidden md:inline">Movimentar</span>
+            <div class="flex gap-2 md:gap-3 items-center">
+                <button onclick="openMovementModal()" id="navBtnMove" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30 transform hover:scale-105">
+                    <i class="fa-solid fa-qrcode"></i> <span class="hidden md:inline">MOVIMENTAR</span>
                 </button>
                 
+                <button onclick="openLocationsModal()" id="navBtnLoc" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200" title="Locais">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </button>
+
                 <button onclick="generateReport()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200" title="Relatórios">
                     <i class="fa-solid fa-file-pdf"></i>
                 </button>
                 
-                <button onclick="openDataModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200" title="Dados">
+                <button onclick="openDataModal()" id="navBtnData" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200" title="Dados & Backup">
                     <i class="fa-solid fa-database"></i>
                 </button>
 
-                <button onclick="checkLimitAndOpenModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 md:px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30">
-                    <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Novo Item</span>
+                <button onclick="checkLimitAndOpenModal()" id="navBtnNew" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Item</span>
+                </button>
+
+                <button onclick="logout()" class="ml-2 text-slate-400 hover:text-red-400 transition text-sm flex flex-col items-center" title="Sair">
+                    <i class="fa-solid fa-power-off"></i>
                 </button>
             </div>
         </div>
@@ -95,13 +153,22 @@
             
             <!-- Dashboard Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p class="text-slate-500 text-[10px] font-bold uppercase">Patrimônio</p>
-                    <h3 class="text-xl md:text-2xl font-bold text-slate-800" id="stat-total-value">R$ 0,00</h3>
-                    <i class="fa-solid fa-sack-dollar text-emerald-500 absolute top-4 right-4 opacity-20 text-4xl"></i>
+                <!-- Card Patrimônio Atualizado (Com ID para ocultar) -->
+                <div id="dashboardPatrimonyCard" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden group">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase z-10 relative">Patrimônio Total</p>
+                    <h3 class="text-xl md:text-2xl font-bold text-slate-800 mb-1 z-10 relative" id="stat-total-value">R$ 0,00</h3>
+                    
+                    <!-- Detalhamento -->
+                    <div class="flex gap-2 text-[10px] font-medium z-10 relative mt-1">
+                        <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100" title="Produtos Finais">Prod: <span id="stat-prod-value">R$ 0</span></span>
+                        <span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100" title="Matéria Prima">Mat: <span id="stat-mat-value">R$ 0</span></span>
+                    </div>
+
+                    <i class="fa-solid fa-sack-dollar text-emerald-500 absolute -bottom-4 -right-4 opacity-10 text-6xl group-hover:scale-110 transition-transform"></i>
                 </div>
+
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p class="text-slate-500 text-[10px] font-bold uppercase">Itens</p>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase">Itens Cadastrados</p>
                     <h3 class="text-xl md:text-2xl font-bold text-slate-800" id="stat-total-items">0</h3>
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -132,10 +199,9 @@
                         </select>
                         <select id="filterStatus" onchange="renderItems()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 outline-none">
                             <option value="all">Status: Todos</option>
-                            <option value="expired">Vencidos (Preto)</option>
-                            <option value="7days">Vence 7 dias (Vermelho)</option>
-                            <option value="15days">Vence 15 dias (Laranja)</option>
-                            <option value="30days">Vence 30 dias (Amarelo)</option>
+                            <option value="expired">Vencidos</option>
+                            <option value="7days">Vence 7 dias</option>
+                            <option value="low">Baixo Estoque</option>
                         </select>
                     </div>
                 </div>
@@ -153,78 +219,123 @@
         </div>
     </div>
 
-    <!-- MODAL DE MOVIMENTAÇÃO -->
+    <!-- MODAL DE MOVIMENTAÇÃO SIMPLIFICADA -->
     <div id="movementModal" class="fixed inset-0 bg-slate-900/90 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-slate-800 p-4 flex justify-between items-center text-white">
-                <h2 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-right-left"></i> Registrar Movimentação</h2>
-                <button onclick="closeMovementModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[95vh]">
             
-            <div class="p-6 overflow-y-auto bg-slate-50">
-                <form id="movementForm" onsubmit="handleMovementSubmit(event)" class="space-y-4">
+            <!-- Passo 1: Busca/Scan -->
+            <div id="step1-scan" class="p-6 flex flex-col h-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-slate-800">Nova Movimentação</h2>
+                    <button onclick="closeMovementModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                </div>
+
+                <div class="flex-grow flex flex-col gap-4">
+                    <button onclick="startScanner('movement')" class="bg-indigo-600 hover:bg-indigo-700 text-white p-8 rounded-2xl shadow-lg transition flex flex-col items-center justify-center gap-4 group">
+                        <i class="fa-solid fa-qrcode text-5xl group-hover:scale-110 transition-transform"></i>
+                        <span class="font-bold text-lg">Ler Código de Barras / QR</span>
+                    </button>
                     
-                    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">1. Identificar Produto</label>
-                        <div class="flex gap-2 mb-2">
-                            <input type="text" id="movSearch" placeholder="Digite Nome, Código ou ID..." class="flex-grow px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" oninput="searchProductForMovement()">
-                            <button type="button" onclick="startScanner('movement')" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-200 transition font-medium"><i class="fa-solid fa-barcode"></i> Ler</button>
-                        </div>
-                        
-                        <div id="movProductCard" class="hidden bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex gap-3 items-center mt-2 animate-fade-in">
-                            <input type="hidden" id="movItemId" required>
-                            <div id="movProductImg" class="w-12 h-12 bg-white rounded flex-shrink-0 flex items-center justify-center text-slate-300 text-xs border border-indigo-100">Foto</div>
-                            <div class="flex-grow">
-                                <h4 id="movProductName" class="font-bold text-indigo-900 text-sm">Nome do Produto</h4>
-                                <p class="text-xs text-indigo-700">Estoque Atual: <strong id="movCurrentStock">0</strong> <span id="movUnit">UN</span></p>
-                            </div>
-                            <button type="button" onclick="clearMovSelection()" class="text-indigo-400 hover:text-indigo-700"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                        <div id="movSearchResults" class="hidden mt-2 max-h-40 overflow-y-auto border border-slate-200 rounded-lg bg-white shadow-lg absolute w-[90%] md:w-[600px] z-50"></div>
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                        <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400">Ou busque manualmente</span></div>
                     </div>
 
-                    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm opacity-50 pointer-events-none transition" id="movDetailsSection">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">2. Dados da Operação</label>
-                        
-                        <div class="grid grid-cols-2 gap-4 mb-3">
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">Tipo de Movimento</label>
-                                <select id="movType" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none font-bold text-slate-700" onchange="updateMovLabels()">
-                                    <option value="in" class="text-green-600">Entrada (+)</option>
-                                    <option value="out" class="text-red-600">Saída (-)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">Quantidade</label>
-                                <input type="number" step="any" id="movQty" required min="0.01" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none font-bold text-lg text-slate-800" placeholder="0.00">
-                            </div>
-                        </div>
+                    <div class="relative">
+                        <input type="text" id="movSearch" placeholder="Digite nome, código ou ID..." class="w-full pl-10 pr-4 py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-lg" oninput="searchProductForMovement()">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="block text-xs text-slate-500 mb-1" id="labelSourceDest">Origem / Fornecedor</label>
-                            <input type="text" id="movSourceDest" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none text-sm" placeholder="Ex: Fornecedor ABC ou Setor de Montagem">
-                        </div>
+                    <div id="movSearchResults" class="hidden flex-grow overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner max-h-[300px]">
+                        <!-- Resultados aqui -->
+                    </div>
+                </div>
+            </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">Data</label>
-                                <input type="date" id="movDate" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-600">
+            <!-- Passo 2: Ação (Entrada/Saída) -->
+            <div id="step2-action" class="hidden flex flex-col h-full bg-slate-50">
+                <div class="bg-white p-4 shadow-sm border-b border-slate-200 flex justify-between items-center">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                         <div id="movProductImg" class="w-12 h-12 bg-slate-100 rounded flex-shrink-0 flex items-center justify-center text-slate-300 border">Foto</div>
+                         <div class="min-w-0">
+                             <h3 class="font-bold text-slate-800 truncate" id="movProductName">Nome do Produto</h3>
+                             <p class="text-xs text-slate-500" id="movProductCode">COD123</p>
+                         </div>
+                    </div>
+                    <button onclick="resetMovSteps()" class="text-slate-400 hover:text-indigo-600 text-sm font-medium">Trocar</button>
+                </div>
+
+                <form onsubmit="handleMovementSubmit(event)" class="p-6 flex flex-col gap-6 overflow-y-auto">
+                    <input type="hidden" id="movItemId">
+                    
+                    <!-- Botões de Tipo -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="movType" value="in" class="peer sr-only" onchange="updateMovUI()" checked>
+                            <div class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 text-center transition hover:bg-white">
+                                <i class="fa-solid fa-arrow-down text-2xl mb-1 text-emerald-500"></i>
+                                <div class="font-bold text-slate-700">ENTRADA</div>
                             </div>
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">Hora</label>
-                                <input type="time" id="movTime" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-600">
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="movType" value="out" class="peer sr-only" onchange="updateMovUI()">
+                            <div class="p-4 rounded-xl border-2 border-slate-200 peer-checked:border-red-500 peer-checked:bg-red-50 text-center transition hover:bg-white">
+                                <i class="fa-solid fa-arrow-up text-2xl mb-1 text-red-500"></i>
+                                <div class="font-bold text-slate-700">SAÍDA</div>
                             </div>
+                        </label>
+                    </div>
+
+                    <!-- Quantidade -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase">Quantidade</label>
+                            <span class="text-xs text-slate-400">Atual: <strong id="movCurrentStock" class="text-slate-700">10</strong> <span id="movUnit">UN</span></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="button" onclick="adjustQty(-1)" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xl">-</button>
+                            <input type="number" id="movQty" required step="any" min="0.01" class="flex-grow text-center text-3xl font-bold text-slate-800 outline-none py-2" placeholder="0">
+                            <button type="button" onclick="adjustQty(1)" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xl">+</button>
                         </div>
                     </div>
 
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" onclick="closeMovementModal()" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-lg font-medium transition">Cancelar</button>
-                        <button type="submit" id="btnConfirmMov" disabled class="w-2/3 bg-slate-400 text-white py-3 rounded-lg font-bold transition shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-                            <i class="fa-solid fa-check"></i> Confirmar
-                        </button>
+                    <!-- Destino / Origem -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="movLocationLabel">Destino / Departamento</label>
+                        <div class="flex gap-2">
+                            <select id="movLocationSelect" class="w-full p-3 bg-white border border-slate-300 rounded-lg text-slate-700 outline-none focus:border-indigo-500">
+                                <!-- Populado via JS -->
+                            </select>
+                            <button type="button" onclick="openLocationsModal()" class="bg-slate-200 px-3 rounded-lg hover:bg-slate-300 text-slate-600" title="Gerenciar Locais"><i class="fa-solid fa-gear"></i></button>
+                        </div>
                     </div>
+
+                    <!-- Botão Confirmar -->
+                    <button type="submit" id="btnConfirmMov" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 transition transform active:scale-95 mt-auto">
+                        CONFIRMAR ENTRADA
+                    </button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Gerenciar Locais -->
+    <div id="locationsModal" class="fixed inset-0 bg-slate-900/80 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-map-location-dot"></i> Gerenciar Locais</h3>
+                <button onclick="document.getElementById('locationsModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <form onsubmit="addLocation(event)" class="flex gap-2 mb-4">
+                <input type="text" id="newLocationInput" required placeholder="Novo local (ex: Setor B)" class="flex-grow border p-2 rounded-lg outline-none focus:border-indigo-500">
+                <button type="submit" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700 font-bold">+</button>
+            </form>
+
+            <ul id="locationsList" class="max-h-60 overflow-y-auto space-y-2">
+                <!-- Lista injetada via JS -->
+            </ul>
+            <p class="text-xs text-slate-400 mt-4 text-center">Esses locais aparecerão nas opções de Entrada e Saída.</p>
         </div>
     </div>
 
@@ -276,8 +387,8 @@
                             </div>
 
                             <div>
-                                <label class="label-text">Localização / Prateleira</label>
-                                <input type="text" id="itemLocation" class="input-field" placeholder="Ex: Corredor A, Prat. 2">
+                                <label class="label-text">Localização Padrão <span class="text-slate-400 font-normal ml-1">(Opcional)</span></label>
+                                <input type="text" id="itemLocation" class="input-field" placeholder="Ex: Prateleira A1">
                             </div>
 
                             <div>
@@ -304,27 +415,41 @@
                                 <input type="number" step="any" id="itemMinStock" required class="input-field" placeholder="Alerta">
                             </div>
 
-                            <div class="md:col-span-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                                <h4 class="text-xs font-bold text-indigo-800 mb-2 flex items-center gap-2"><i class="fa-regular fa-clock"></i> Controle de Validade</h4>
-                                <div class="grid grid-cols-2 gap-3">
+                            <!-- CONTROLE DE VALIDADE OPCIONAL -->
+                            <div class="md:col-span-2 bg-slate-50 p-3 rounded-lg border border-slate-200" id="validityContainer">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-bold text-slate-700 flex items-center gap-2"><i class="fa-regular fa-clock"></i> Controle de Validade</h4>
+                                    
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="toggleValidity" class="sr-only peer" onchange="toggleValiditySection()">
+                                        <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        <span class="ms-2 text-xs font-medium text-slate-500">Ativar</span>
+                                    </label>
+                                </div>
+                                
+                                <div id="validityInputs" class="hidden grid-cols-2 gap-3 mt-3 animate-fade-in border-t border-slate-200 pt-3">
                                     <div>
                                         <label class="label-text">Vencimento</label>
-                                        <input type="date" id="itemExpiry" class="input-field text-xs">
+                                        <input type="date" id="itemExpiry" class="input-field text-xs bg-white">
                                     </div>
                                     <div>
                                         <label class="label-text">Anotações / Obs</label>
-                                        <input type="text" id="itemNotes" class="input-field text-xs" placeholder="Ex: Lote 123">
+                                        <input type="text" id="itemNotes" class="input-field text-xs bg-white" placeholder="Ex: Lote 123">
                                     </div>
+                                    <p class="col-span-2 text-[10px] text-slate-400 italic text-center">* Itens próximos ao vencimento serão alertados no painel.</p>
                                 </div>
-                                <p class="text-[10px] text-slate-500 mt-2 italic">* O sistema aplicará cores automaticamente (Preto, Vermelho, Laranja, Amarelo, Verde).</p>
                             </div>
+
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="bg-white p-4 border-t border-slate-200 flex justify-end gap-3">
-                <button onclick="closeModal()" class="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition">Cancelar</button>
-                <button onclick="document.getElementById('itemForm').requestSubmit()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow transition transform active:scale-95">Salvar Item</button>
+            <div class="bg-white p-4 border-t border-slate-200 flex justify-between items-center gap-3">
+                <button type="button" id="btnDeleteItem" onclick="deleteItem()" class="hidden text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"><i class="fa-solid fa-trash"></i> Excluir</button>
+                <div class="flex gap-3 ml-auto">
+                    <button onclick="closeModal()" class="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition">Cancelar</button>
+                    <button id="btnSaveItem" onclick="document.getElementById('itemForm').requestSubmit()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow transition transform active:scale-95">Salvar Item</button>
+                </div>
             </div>
         </div>
     </div>
@@ -343,11 +468,10 @@
                 </div>
 
                 <div class="p-8 md:p-12">
-                    <!-- Cabeçalho Impresso -->
                     <div class="border-b-4 border-slate-800 pb-4 mb-6 flex justify-between items-end">
                         <div>
                             <h1 class="text-3xl font-bold text-slate-900 uppercase tracking-tight">Relatório Gerencial</h1>
-                            <p class="text-slate-500 text-sm mt-1">Nexus Enterprise 2.0 - Controle de Estoque</p>
+                            <p class="text-slate-500 text-sm mt-1">Nexus Enterprise 3.7 - Controle de Estoque</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-slate-700">Emissão</p>
@@ -355,7 +479,6 @@
                         </div>
                     </div>
 
-                    <!-- Resumo -->
                     <div class="grid grid-cols-4 gap-4 mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <div class="text-center">
                             <p class="text-xs text-slate-500 uppercase">Valor em Estoque</p>
@@ -375,50 +498,6 @@
                         </div>
                     </div>
 
-                    <!-- Seção 1: Monitoramento de Validade -->
-                    <div class="mb-8 break-inside-avoid">
-                        <h3 class="text-lg font-bold text-slate-800 mb-2 border-b-2 border-slate-800 pb-1 flex items-center gap-2">
-                            <i class="fa-solid fa-clock"></i> Monitoramento de Validade (Lote)
-                        </h3>
-                        <p class="text-xs text-slate-500 mb-2">Legenda: <span class="bg-black text-white px-1 rounded">Vencido</span> <span class="bg-red-100 text-red-800 px-1 rounded">7 Dias</span> <span class="bg-orange-100 text-orange-800 px-1 rounded">15 Dias</span> <span class="bg-yellow-100 text-yellow-800 px-1 rounded">30 Dias</span> <span class="bg-emerald-100 text-emerald-800 px-1 rounded">3 Meses</span></p>
-                        
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr>
-                                    <th>Status</th>
-                                    <th>Item</th>
-                                    <th>Vencimento</th>
-                                    <th>Dias Restantes</th>
-                                    <th class="text-right">Qtd</th>
-                                    <th class="text-right">Valor em Risco</th>
-                                </tr>
-                            </thead>
-                            <tbody id="rep-validity-table"></tbody>
-                        </table>
-                        <p id="no-validity-msg" class="text-center text-slate-400 text-sm py-2 hidden">Nenhum item com vencimento próximo cadastrado.</p>
-                    </div>
-
-                    <!-- Seção 2: Necessidade de Compra -->
-                    <div class="mb-8 break-inside-avoid">
-                        <h3 class="text-lg font-bold text-slate-800 mb-2 border-b border-orange-200 pb-1 flex items-center gap-2 text-orange-700">
-                            <i class="fa-solid fa-cart-shopping"></i> Sugestão de Compras (Reposição)
-                        </h3>
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Fornecedor / Ref</th>
-                                    <th class="text-center">Atual</th>
-                                    <th class="text-center">Mínimo</th>
-                                    <th class="text-right">Comprar (+50%)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="rep-stock-table"></tbody>
-                        </table>
-                        <p id="no-stock-msg" class="text-center text-slate-400 text-sm py-2 hidden">Estoque em dia.</p>
-                    </div>
-
-                    <!-- Seção 3: Inventário Completo -->
                     <div class="break-inside-avoid">
                         <h3 class="text-lg font-bold text-slate-800 mb-2 border-b border-slate-200 pb-1">Inventário Geral</h3>
                         <table class="w-full text-xs">
@@ -434,9 +513,9 @@
                             <tbody id="rep-general-table"></tbody>
                         </table>
                     </div>
-
+                    
                     <div class="mt-8 text-center text-[10px] text-slate-400 pt-4 border-t border-slate-100">
-                        Documento gerado em <span id="footerDate"></span>. Nexus Enterprise System.
+                        Documento gerado automaticamente.
                     </div>
                 </div>
             </div>
@@ -455,7 +534,7 @@
         </div>
     </div>
 
-    <!-- Modal Dados e Licença (Simplificado para o código) -->
+    <!-- Modal Dados e Licença -->
     <div id="licenseModal" class="fixed inset-0 bg-slate-900/90 hidden z-[200] flex items-center justify-center p-4">
         <div class="bg-white rounded-xl max-w-sm w-full p-6 text-center">
             <i class="fa-solid fa-crown text-4xl text-amber-500 mb-4 shadow-lg rounded-full p-2 bg-amber-100"></i>
@@ -470,6 +549,9 @@
     <div id="dataModal" class="fixed inset-0 bg-slate-900/90 hidden z-[200] flex items-center justify-center p-4">
         <div class="bg-white rounded-xl max-w-sm w-full p-6">
             <h3 class="font-bold text-lg mb-4">Gerenciar Dados</h3>
+            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 text-xs text-blue-700">
+                <i class="fa-solid fa-info-circle mr-1"></i> Seus dados e fotos são salvos no navegador. O IndexedDB é usado para maior capacidade.
+            </div>
             <button onclick="exportData()" class="w-full bg-blue-100 text-blue-700 py-3 rounded-lg font-bold mb-3 flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Backup (JSON)</button>
             <input type="file" id="importFile" class="hidden" onchange="importData(event)">
             <button onclick="document.getElementById('importFile').click()" class="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-upload"></i> Restaurar</button>
@@ -486,7 +568,8 @@
     <script>
         // --- ESTADO & CONFIGURAÇÃO ---
         let items = JSON.parse(localStorage.getItem('nexus_items')) || [];
-        let movements = JSON.parse(localStorage.getItem('nexus_movements')) || []; // Histórico de Movimentações
+        let movements = JSON.parse(localStorage.getItem('nexus_movements')) || []; 
+        let locations = JSON.parse(localStorage.getItem('nexus_locations')) || ['Estoque Central', 'Loja', 'Produção', 'Ajuste de Estoque', 'Fornecedor Externo'];
         let db;
         let html5QrcodeScanner = null;
         let scanTarget = null;
@@ -494,35 +577,115 @@
         let isLicensed = false;
         let deviceId = localStorage.getItem('nexus_device_id') || 'ID-' + Math.random().toString(36).substr(2,6).toUpperCase();
         
+        // NOVO: Estado de Sessão
+        let currentRole = null; // 'admin', 'operator'
+
         localStorage.setItem('nexus_device_id', deviceId);
 
-        // --- HELPER: CÁLCULO DE VALIDADE (NOVO) ---
+        // --- SISTEMA DE LOGIN E PERMISSÕES (NOVO) ---
+        function selectRole(role) {
+            if(role === 'admin') {
+                // Abre o Modal Personalizado em vez de usar o prompt
+                document.getElementById('passwordModal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('adminPassInput').focus(), 100); // Foco com pequeno delay para garantir que o modal abriu
+            } else {
+                completeLogin(role);
+            }
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('adminPassInput').value = '';
+        }
+
+        function confirmAdminLogin() {
+            const pass = document.getElementById('adminPassInput').value;
+            // Senha: N3xus@Adm2025!
+            if(btoa(pass) === "TjN4dXNAQWRtMjAyNSE=") {
+                closePasswordModal();
+                completeLogin('admin');
+            } else {
+                alert("Senha incorreta!");
+                document.getElementById('adminPassInput').value = '';
+                document.getElementById('adminPassInput').focus();
+            }
+        }
+
+        function completeLogin(role) {
+            currentRole = role;
+            document.getElementById('loginOverlay').classList.add('hidden');
+            updateUIForRole();
+            showToast(`Bem-vindo, ${role === 'admin' ? 'ADMINISTRADOR' : 'OPERADOR'}`);
+        }
+
+        // Suporte a tecla Enter no input de senha
+        document.getElementById('adminPassInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') confirmAdminLogin();
+        });
+
+        function logout() {
+            currentRole = null;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            // Reseta visualização padrão (esconde tudo até logar)
+        }
+
+        function updateUIForRole() {
+            const roleLabels = { admin: 'ADMINISTRADOR', operator: 'OPERADOR' };
+            document.getElementById('userRoleBadge').innerText = roleLabels[currentRole];
+            
+            // Controle de visibilidade da Navbar
+            const btnMove = document.getElementById('navBtnMove');
+            const btnLoc = document.getElementById('navBtnLoc');
+            const btnData = document.getElementById('navBtnData');
+            const btnNew = document.getElementById('navBtnNew');
+            const licBanner = document.getElementById('licenseStatusBanner');
+            const dashPatrimony = document.getElementById('dashboardPatrimonyCard');
+
+            // Reset
+            btnMove.classList.remove('hidden');
+            btnLoc.classList.remove('hidden');
+            btnData.classList.remove('hidden');
+            btnNew.classList.remove('hidden');
+            licBanner.classList.remove('hidden');
+            dashPatrimony.classList.remove('hidden');
+
+            if (currentRole === 'operator') {
+                btnLoc.classList.add('hidden');  // Operador não muda locais
+                // btnData.classList.add('hidden'); // REMOVIDO: Operador PODE ver menu de dados para fazer backup
+                licBanner.classList.add('hidden');
+                dashPatrimony.classList.add('hidden'); // Oculta patrimônio total
+            }
+            // Admin vê tudo
+
+            renderItems(); // Re-renderiza itens para esconder botões de edição/exclusão
+        }
+
+        function checkPermission(action) {
+            if (!currentRole) return false;
+            if (currentRole === 'admin') return true;
+
+            const permissions = {
+                'operator': ['move', 'create', 'edit'] // Operador pode criar, editar (estoque), movimentar
+            };
+
+            return permissions[currentRole]?.includes(action);
+        }
+
+        // --- HELPER: CÁLCULO DE VALIDADE ---
         function getExpiryStatus(expiryDateStr) {
             if (!expiryDateStr) return null;
-            
             const today = new Date();
             today.setHours(0,0,0,0);
             const expiry = new Date(expiryDateStr + 'T00:00:00');
             const diffTime = expiry - today;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            // Lógica de Cores Solicitada
-            if (diffDays < 0) {
-                return { label: 'VENCIDO', colorClass: 'bg-black text-white', borderClass: 'border-black', days: diffDays, status: 'expired' };
-            } else if (diffDays <= 7) {
-                return { label: `Vence em ${diffDays} dias`, colorClass: 'bg-red-100 text-red-700', borderClass: 'border-red-500', days: diffDays, status: '7days' };
-            } else if (diffDays <= 15) {
-                return { label: `Vence em ${diffDays} dias`, colorClass: 'bg-orange-100 text-orange-700', borderClass: 'border-orange-500', days: diffDays, status: '15days' };
-            } else if (diffDays <= 30) {
-                return { label: `Vence em ${diffDays} dias`, colorClass: 'bg-yellow-100 text-yellow-800', borderClass: 'border-yellow-500', days: diffDays, status: '30days' };
-            } else if (diffDays <= 90) { // 3 Meses
-                return { label: `Vence em ${diffDays} dias`, colorClass: 'bg-emerald-100 text-emerald-700', borderClass: 'border-emerald-500', days: diffDays, status: '90days' };
-            } else {
-                return { label: 'Validade OK', colorClass: 'bg-slate-100 text-slate-500', borderClass: 'border-slate-200', days: diffDays, status: 'ok' };
-            }
+            if (diffDays < 0) return { label: 'VENCIDO', colorClass: 'bg-black text-white', borderClass: 'border-black', days: diffDays, status: 'expired' };
+            else if (diffDays <= 7) return { label: `Vence em ${diffDays} dias`, colorClass: 'bg-red-100 text-red-700', borderClass: 'border-red-500', days: diffDays, status: '7days' };
+            else return { label: 'Validade OK', colorClass: 'bg-slate-100 text-slate-500', borderClass: 'border-slate-200', days: diffDays, status: 'ok' };
         }
 
-        // --- SISTEMA DE DADOS (IndexedDB para Imagens) ---
+        // --- SISTEMA DE DADOS (DB IMAGENS) ---
         const initDB = () => {
             const req = indexedDB.open('NexusDB', 1);
             req.onupgradeneeded = (e) => e.target.result.createObjectStore('images', { keyPath: 'id' });
@@ -535,6 +698,8 @@
             req.onsuccess = (e) => resolve(e.target.result ? e.target.result.data : null);
             req.onerror = () => resolve(null);
         });
+        const delImg = (id) => db.transaction(['images'], 'readwrite').objectStore('images').delete(String(id));
+
 
         // --- LICENCIAMENTO ---
         function checkLicense() {
@@ -545,6 +710,7 @@
             updateLicenseUI();
         }
         function activateLicense() {
+            if(currentRole !== 'admin') return alert("Apenas administradores podem ativar licenças.");
             const input = document.getElementById('licenseInput').value.toUpperCase();
             const validKey = btoa(deviceId + "NEXUS").substring(0,10).toUpperCase();
             if(input === validKey) {
@@ -564,6 +730,59 @@
             document.getElementById('freeCountDisplay').innerText = items.length;
         }
 
+        // --- GESTÃO DE LOCAIS ---
+        function openLocationsModal() {
+            if(currentRole !== 'admin') return alert("Acesso negado.");
+            renderLocationsList();
+            document.getElementById('locationsModal').classList.remove('hidden');
+        }
+        
+        function renderLocationsList() {
+            const list = document.getElementById('locationsList');
+            list.innerHTML = '';
+            
+            const html = locations.map((loc, index) => `
+                <li class="flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-100">
+                    <span class="font-medium text-slate-700">${loc}</span>
+                    <button type="button" onclick="removeLocation(${index})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition" title="Excluir Local">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </li>
+            `).join('');
+            
+            list.innerHTML = html;
+            populateLocationSelect();
+        }
+
+        function addLocation(e) {
+            e.preventDefault();
+            const input = document.getElementById('newLocationInput');
+            if(input.value.trim()) {
+                locations.push(input.value.trim());
+                localStorage.setItem('nexus_locations', JSON.stringify(locations));
+                input.value = '';
+                renderLocationsList();
+            }
+        }
+
+        function removeLocation(index) {
+             if(confirm('Tem certeza que deseja remover este local?')) {
+                locations.splice(index, 1);
+                localStorage.setItem('nexus_locations', JSON.stringify(locations));
+                renderLocationsList();
+                showToast("Local removido.");
+            }
+        }
+        
+        function populateLocationSelect() {
+            const sel = document.getElementById('movLocationSelect');
+            if(!sel) return;
+            sel.innerHTML = '<option value="" disabled selected>Selecione...</option>';
+            locations.forEach(loc => {
+                sel.innerHTML += `<option value="${loc}">${loc}</option>`;
+            });
+        }
+
         // --- CRUD ITENS ---
         async function renderItems() {
             const grid = document.getElementById('itemsGrid');
@@ -578,13 +797,10 @@
                 
                 const expStatus = getExpiryStatus(i.expiry);
                 let matchStatus = true;
-
                 if(statusFilter === 'all') matchStatus = true;
                 else if(statusFilter === 'low') matchStatus = i.qty <= i.minStock;
                 else if(statusFilter === 'expired') matchStatus = expStatus && expStatus.status === 'expired';
                 else if(statusFilter === '7days') matchStatus = expStatus && expStatus.status === '7days';
-                else if(statusFilter === '15days') matchStatus = expStatus && expStatus.status === '15days';
-                else if(statusFilter === '30days') matchStatus = expStatus && expStatus.status === '30days';
                 
                 return matchSearch && matchType && matchStatus;
             });
@@ -599,12 +815,10 @@
                     if(b64) imgHtml = `<img src="${b64}" class="w-16 h-16 rounded-lg object-cover border border-slate-200">`;
                 }
 
-                // Lógica de Status (Visual do Card)
                 const expInfo = getExpiryStatus(item.expiry);
                 let borderClass = 'border-slate-200';
                 let statusBadge = '';
                 
-                // Prioridade: Vencimento > Baixo Estoque
                 if(expInfo && expInfo.status !== 'ok') {
                     borderClass = expInfo.borderClass + ' border-l-4';
                     statusBadge = `<span class="${expInfo.colorClass} text-[10px] font-bold px-2 py-0.5 rounded ml-1 uppercase whitespace-nowrap">${expInfo.label}</span>`;
@@ -613,15 +827,23 @@
                     statusBadge = `<span class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded ml-1">REPOR</span>`;
                 }
 
+                // Renderiza botões apenas se permitido
+                let buttonsHtml = '';
+                if (checkPermission('create') || checkPermission('edit')) { // Se pode criar/editar, pode ver botões de ação
+                    buttonsHtml = `
+                    <div class="flex gap-2 mt-auto">
+                        <button onclick="openEditModal(${item.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg text-sm font-medium transition"><i class="fa-solid fa-pen"></i></button>
+                        ${checkPermission('move') ? `<button onclick="openQuickMove(${item.id})" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 py-2 rounded-lg text-sm font-medium transition border border-emerald-100" title="Movimentar"><i class="fa-solid fa-right-left"></i></button>` : ''}
+                    </div>`;
+                }
+
                 const card = `
                 <div class="bg-white p-4 rounded-xl border ${borderClass} card-hover flex flex-col justify-between">
                     <div class="flex gap-3 mb-3">
                         ${imgHtml}
                         <div class="overflow-hidden flex-grow">
                             <h4 class="font-bold text-slate-800 truncate" title="${item.name}">${item.name}</h4>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                ${statusBadge}
-                            </div>
+                            <div class="flex flex-wrap gap-1 mt-1">${statusBadge}</div>
                             <p class="text-xs text-slate-400 mt-1 font-mono">${item.barcode || 'S/ Código'}</p>
                             <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot"></i> ${item.location || 'N/A'}</p>
                         </div>
@@ -636,24 +858,44 @@
                             <p class="font-bold text-slate-700">R$ ${parseFloat(item.price).toFixed(2)}</p>
                         </div>
                     </div>
-                    <div class="flex gap-2 mt-auto">
-                        <button onclick="openEditModal(${item.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg text-sm font-medium transition"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="openQuickMove(${item.id})" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 py-2 rounded-lg text-sm font-medium transition border border-emerald-100" title="Movimentar"><i class="fa-solid fa-right-left"></i></button>
-                    </div>
+                    ${buttonsHtml}
                 </div>`;
                 grid.innerHTML += card;
             }
             updateDashboard();
         }
 
+        // --- LÓGICA DE UI DE FORMULÁRIO ---
+        function toggleValiditySection() {
+            const checkbox = document.getElementById('toggleValidity');
+            const inputs = document.getElementById('validityInputs');
+            const container = document.getElementById('validityContainer');
+            
+            if(checkbox.checked) {
+                inputs.classList.remove('hidden');
+                inputs.classList.add('grid');
+                container.classList.remove('bg-slate-50', 'border-slate-200');
+                container.classList.add('bg-indigo-50', 'border-indigo-200');
+            } else {
+                inputs.classList.add('hidden');
+                inputs.classList.remove('grid');
+                container.classList.add('bg-slate-50', 'border-slate-200');
+                container.classList.remove('bg-indigo-50', 'border-indigo-200');
+                
+                document.getElementById('itemExpiry').value = '';
+                document.getElementById('itemNotes').value = '';
+            }
+        }
+
         async function handleFormSubmit(e) {
             e.preventDefault();
+            if(!checkPermission('create') && !checkPermission('edit')) return alert("Sem permissão.");
+
             const idVal = document.getElementById('itemId').value;
             const isNew = !idVal;
-            
-            if(isNew && !isLicensed && items.length >= 5) {
-                return openLicenseModal();
-            }
+            if(isNew && !isLicensed && items.length >= 5) return openLicenseModal();
+
+            const isValidityEnabled = document.getElementById('toggleValidity').checked;
 
             const id = idVal ? parseInt(idVal) : Date.now();
             const data = {
@@ -666,8 +908,8 @@
                 qty: parseFloat(document.getElementById('itemQty').value),
                 unit: document.getElementById('itemUnit').value,
                 minStock: parseFloat(document.getElementById('itemMinStock').value),
-                expiry: document.getElementById('itemExpiry').value,
-                notes: document.getElementById('itemNotes').value,
+                expiry: isValidityEnabled ? document.getElementById('itemExpiry').value : '',
+                notes: isValidityEnabled ? document.getElementById('itemNotes').value : '',
                 hasImage: !!tempImageBase64 || (items.find(i=>i.id===id)?.hasImage && tempImageBase64 !== null)
             };
             
@@ -685,121 +927,138 @@
             showToast(isNew ? "Item Criado!" : "Item Atualizado!");
         }
 
-        // --- MOVIMENTAÇÕES ---
-        function openMovementModal() {
-            document.getElementById('movementForm').reset();
-            document.getElementById('movProductCard').classList.add('hidden');
-            document.getElementById('movDetailsSection').classList.add('opacity-50', 'pointer-events-none');
-            document.getElementById('btnConfirmMov').disabled = true;
-            document.getElementById('btnConfirmMov').classList.add('cursor-not-allowed', 'bg-slate-400');
-            document.getElementById('btnConfirmMov').classList.remove('bg-indigo-600', 'bg-red-600', 'hover:bg-indigo-700', 'hover:bg-red-700');
-            
-            const now = new Date();
-            document.getElementById('movDate').valueAsDate = now;
-            document.getElementById('movTime').value = now.toTimeString().substring(0,5);
-            
-            document.getElementById('movementModal').classList.remove('hidden');
-            document.getElementById('movSearch').focus();
+        // --- FUNCIONALIDADE DE EXCLUSÃO DE ITENS ---
+        function deleteItem() {
+            if(currentRole !== 'admin') return alert("Apenas administradores podem excluir itens.");
+
+            const idVal = document.getElementById('itemId').value;
+            if(!idVal) return;
+            const id = parseInt(idVal);
+
+            if(confirm("Tem certeza que deseja excluir este item permanentemente? Esta ação não pode ser desfeita.")) {
+                const idx = items.findIndex(i => i.id === id);
+                if(idx > -1) {
+                    items.splice(idx, 1);
+                    if(db) delImg(id); // Remove imagem do IndexedDB se existir
+                    saveData();
+                    renderItems();
+                    closeModal();
+                    showToast("Item excluído com sucesso.");
+                }
+            }
         }
 
+        // --- LÓGICA DE MOVIMENTAÇÃO SIMPLIFICADA ---
+        function openMovementModal() {
+            if(!checkPermission('move')) return alert("Sem permissão para movimentar.");
+            resetMovSteps();
+            populateLocationSelect();
+            document.getElementById('movementModal').classList.remove('hidden');
+        }
         function closeMovementModal() {
             document.getElementById('movementModal').classList.add('hidden');
             stopScanner();
         }
-
+        function resetMovSteps() {
+            document.getElementById('step1-scan').classList.remove('hidden');
+            document.getElementById('step2-action').classList.add('hidden');
+            document.getElementById('movSearch').value = '';
+            document.getElementById('movSearchResults').innerHTML = '';
+            document.getElementById('movQty').value = '';
+            document.getElementById('movLocationSelect').selectedIndex = 0;
+            // Reseta para Entrada
+            const radios = document.getElementsByName('movType');
+            radios[0].checked = true;
+            updateMovUI();
+        }
+        
         function searchProductForMovement() {
             const query = document.getElementById('movSearch').value.toLowerCase();
             const results = document.getElementById('movSearchResults');
             results.innerHTML = '';
-            
-            if(query.length < 2) {
-                results.classList.add('hidden');
-                return;
-            }
+            results.classList.remove('hidden');
+
+            if(query.length < 1) return;
 
             const matches = items.filter(i => i.name.toLowerCase().includes(query) || (i.barcode && i.barcode.includes(query)) || String(i.id).includes(query));
             
-            if(matches.length > 0) {
-                results.classList.remove('hidden');
-                matches.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = "p-3 hover:bg-indigo-50 cursor-pointer border-b border-slate-100 flex justify-between items-center";
-                    div.innerHTML = `<div><p class='font-bold text-sm'>${item.name}</p><p class='text-xs text-slate-500'>${item.barcode || 'S/ Cod'}</p></div> <span class='text-xs font-bold bg-slate-200 px-2 rounded'>${item.qty} ${item.unit}</span>`;
-                    div.onclick = () => selectProductForMov(item);
-                    results.appendChild(div);
-                });
-            } else {
-                results.classList.add('hidden');
-            }
+            matches.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "p-4 hover:bg-indigo-50 cursor-pointer border-b border-slate-200 flex justify-between items-center transition";
+                div.innerHTML = `<div><p class='font-bold text-slate-800'>${item.name}</p><p class='text-xs text-slate-500'>${item.barcode || 'S/ Cod'}</p></div> <span class='text-xs font-bold bg-slate-200 px-2 rounded-lg py-1'>${item.qty} ${item.unit}</span>`;
+                div.onclick = () => selectProductForMov(item);
+                results.appendChild(div);
+            });
         }
 
-        function selectProductForMov(item) {
-            document.getElementById('movSearchResults').classList.add('hidden');
-            document.getElementById('movSearch').value = '';
+        async function selectProductForMov(item) {
+            document.getElementById('step1-scan').classList.add('hidden');
+            document.getElementById('step2-action').classList.remove('hidden');
+            
             document.getElementById('movItemId').value = item.id;
             document.getElementById('movProductName').innerText = item.name;
+            document.getElementById('movProductCode').innerText = item.barcode || `ID: ${item.id}`;
             document.getElementById('movCurrentStock').innerText = item.qty;
             document.getElementById('movUnit').innerText = item.unit;
-            document.getElementById('movProductImg').innerHTML = item.hasImage ? '<i class="fa-solid fa-check text-green-500"></i>' : '<i class="fa-solid fa-image"></i>';
+            
+            const imgDiv = document.getElementById('movProductImg');
+            if(item.hasImage) {
+                const b64 = await getImg(item.id);
+                if(b64) imgHtml = `<img src="${b64}" class="w-full h-full object-cover rounded">`;
+                else imgHtml = '<i class="fa-solid fa-image text-slate-400"></i>';
+                imgDiv.innerHTML = imgHtml;
+            } else {
+                imgDiv.innerHTML = '<i class="fa-solid fa-box text-slate-400"></i>';
+            }
 
-            document.getElementById('movProductCard').classList.remove('hidden');
-            document.getElementById('movDetailsSection').classList.remove('opacity-50', 'pointer-events-none');
-            updateMovLabels();
             document.getElementById('movQty').focus();
         }
 
-        function clearMovSelection() {
-            document.getElementById('movProductCard').classList.add('hidden');
-            document.getElementById('movDetailsSection').classList.add('opacity-50', 'pointer-events-none');
-            document.getElementById('btnConfirmMov').disabled = true;
-            document.getElementById('btnConfirmMov').classList.add('cursor-not-allowed', 'bg-slate-400');
-            document.getElementById('btnConfirmMov').className = "w-2/3 bg-slate-400 text-white py-3 rounded-lg font-bold transition shadow-md flex items-center justify-center gap-2 cursor-not-allowed";
+        function adjustQty(amount) {
+            const input = document.getElementById('movQty');
+            let val = parseFloat(input.value) || 0;
+            val = Math.max(0, val + amount);
+            input.value = val;
         }
 
-        function updateMovLabels() {
-            const type = document.getElementById('movType').value;
+        function updateMovUI() {
+            const isIn = document.querySelector('input[name="movType"]:checked').value === 'in';
             const btn = document.getElementById('btnConfirmMov');
-            const labelSD = document.getElementById('labelSourceDest');
+            const label = document.getElementById('movLocationLabel');
 
-            btn.disabled = false;
-            btn.classList.remove('cursor-not-allowed', 'bg-slate-400', 'bg-indigo-600', 'bg-red-600', 'hover:bg-indigo-700', 'hover:bg-red-700');
-
-            if(type === 'in') {
-                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-                btn.innerHTML = '<i class="fa-solid fa-download"></i> Confirmar Entrada';
-                labelSD.innerText = "Origem / Fornecedor";
-                document.getElementById('movSourceDest').placeholder = "Ex: Distribuidora XYZ";
+            if(isIn) {
+                btn.innerText = "CONFIRMAR ENTRADA";
+                btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 transition transform active:scale-95 mt-auto";
+                label.innerText = "Origem / Fornecedor (Opcional)";
             } else {
-                btn.classList.add('bg-red-600', 'hover:bg-red-700');
-                btn.innerHTML = '<i class="fa-solid fa-upload"></i> Confirmar Saída';
-                labelSD.innerText = "Destino / Cliente / Setor";
-                document.getElementById('movSourceDest').placeholder = "Ex: Linha de Produção B";
-            }
-        }
-
-        function openQuickMove(id) {
-            const item = items.find(i => i.id === id);
-            if(item) {
-                openMovementModal();
-                selectProductForMov(item);
+                btn.innerText = "CONFIRMAR SAÍDA";
+                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-500/30 transition transform active:scale-95 mt-auto";
+                label.innerText = "Destino / Departamento (Obrigatório)";
             }
         }
 
         function handleMovementSubmit(e) {
             e.preventDefault();
+            if(!checkPermission('move')) return;
+
             const itemId = parseInt(document.getElementById('movItemId').value);
             const itemIdx = items.findIndex(i => i.id === itemId);
             if(itemIdx === -1) return;
 
-            const type = document.getElementById('movType').value;
+            const type = document.querySelector('input[name="movType"]:checked').value;
             const qty = parseFloat(document.getElementById('movQty').value);
-            const sourceDest = document.getElementById('movSourceDest').value;
-            const dateStr = document.getElementById('movDate').value;
-            const timeStr = document.getElementById('movTime').value;
+            const location = document.getElementById('movLocationSelect').value;
+
+            if(!qty || qty <= 0) return alert("Quantidade inválida");
+            if(type === 'out' && !location) return alert("Selecione um destino para saída.");
 
             if(type === 'in') items[itemIdx].qty += qty;
-            else items[itemIdx].qty -= qty;
+            else {
+                if(items[itemIdx].qty < qty) if(!confirm("Estoque insuficiente. Continuar mesmo assim?")) return;
+                items[itemIdx].qty -= qty;
+            }
 
+            // Atualiza registro de histórico
             movements.push({
                 id: Date.now(),
                 itemId: itemId,
@@ -807,9 +1066,9 @@
                 type: type,
                 qty: qty,
                 unit: items[itemIdx].unit,
-                sourceDest: sourceDest,
-                date: dateStr,
-                time: timeStr,
+                sourceDest: location || (type === 'in' ? 'Entrada Avulsa' : 'Saída'),
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString().substring(0,5),
                 balanceAfter: items[itemIdx].qty
             });
 
@@ -820,6 +1079,14 @@
             renderItems();
             closeMovementModal();
             showToast(type === 'in' ? "Entrada Registrada!" : "Saída Registrada!");
+        }
+
+        function openQuickMove(id) {
+            const item = items.find(i => i.id === id);
+            if(item) {
+                openMovementModal();
+                selectProductForMov(item);
+            }
         }
 
         // --- SCANNER ---
@@ -835,12 +1102,17 @@
                     document.getElementById('searchInput').value = decodedText;
                     renderItems();
                 } else if(scanTarget === 'movement') {
-                    document.getElementById('movSearch').value = decodedText;
-                    searchProductForMovement();
-                    const matches = items.filter(i => i.barcode === decodedText);
-                    if(matches.length === 1) selectProductForMov(matches[0]);
+                    // Lógica de Scan Rápido
+                    const exactMatch = items.find(i => i.barcode === decodedText);
+                    if(exactMatch) {
+                        selectProductForMov(exactMatch);
+                        showToast("Produto Identificado!");
+                    } else {
+                        document.getElementById('movSearch').value = decodedText;
+                        searchProductForMovement();
+                        showToast("Código lido. Verifique a busca.");
+                    }
                 }
-                showToast("Código Lido: " + decodedText);
             });
         }
         function stopScanner() {
@@ -852,34 +1124,16 @@
         function generateReport() {
             const now = new Date();
             document.getElementById('reportDate').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-            document.getElementById('footerDate').innerText = now.toLocaleString();
 
-            let totalVal = 0, totalItems = 0, lowStock = 0, expiredCount = 0;
-            
-            const tbodyStock = document.getElementById('rep-stock-table');
-            const tbodyValidity = document.getElementById('rep-validity-table');
+            let totalVal = 0, totalItems = 0, expiredCount = 0;
             const tbodyGen = document.getElementById('rep-general-table');
-            
-            tbodyStock.innerHTML = '';
-            tbodyValidity.innerHTML = '';
             tbodyGen.innerHTML = '';
             
-            let hasStockIssues = false;
-            let hasValidityIssues = false;
-            let validityList = [];
-
             items.forEach(i => {
                 totalVal += i.price * i.qty;
                 totalItems++;
-                if(i.qty <= i.minStock) lowStock++;
-
-                // Checagem de Validade
                 const exp = getExpiryStatus(i.expiry);
-                if(exp && exp.status !== 'ok') {
-                    if(exp.status === 'expired') expiredCount++;
-                    validityList.push({ ...i, ...exp });
-                    hasValidityIssues = true;
-                }
+                if(exp && exp.status === 'expired') expiredCount++;
 
                 tbodyGen.innerHTML += `
                     <tr>
@@ -890,69 +1144,12 @@
                         <td class="text-right">R$ ${(i.price * i.qty).toFixed(2)}</td>
                     </tr>
                 `;
-
-                if(i.qty <= i.minStock) {
-                    hasStockIssues = true;
-                    const buyQty = (i.minStock * 1.5) - i.qty;
-                    tbodyStock.innerHTML += `
-                        <tr>
-                            <td class="font-bold text-slate-700">${i.name}</td>
-                            <td class="text-xs text-slate-500">${i.location || 'Sem Loc.'}</td>
-                            <td class="text-center text-red-600 font-bold">${i.qty}</td>
-                            <td class="text-center text-slate-500">${i.minStock}</td>
-                            <td class="text-right font-bold text-indigo-600">+${buyQty.toFixed(2)} ${i.unit}</td>
-                        </tr>
-                    `;
-                }
             });
-
-            // Ordenar Lista de Validade (Mais urgente primeiro)
-            validityList.sort((a, b) => a.days - b.days);
-
-            // Renderizar Tabela de Validade com Cores Específicas
-            validityList.forEach(v => {
-                let rowBg = '';
-                // Mapeamento para estilos de impressão
-                if (v.status === 'expired') rowBg = 'print-bg-black';
-                else if (v.status === '7days') rowBg = 'print-bg-red';
-                else if (v.status === '15days') rowBg = 'print-bg-orange';
-                else if (v.status === '30days') rowBg = 'print-bg-yellow';
-                else if (v.status === '90days') rowBg = 'print-bg-green';
-
-                tbodyValidity.innerHTML += `
-                    <tr class="${rowBg}">
-                        <td class="font-bold uppercase text-xs">${v.label}</td>
-                        <td>${v.name}</td>
-                        <td>${new Date(v.expiry).toLocaleDateString()}</td>
-                        <td>${v.days} dias</td>
-                        <td class="text-right font-bold">${v.qty}</td>
-                        <td class="text-right">R$ ${(v.qty * v.price).toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-
-            if(!hasValidityIssues) {
-                document.getElementById('no-validity-msg').classList.remove('hidden');
-                document.getElementById('rep-validity-table').parentElement.classList.add('hidden');
-            } else {
-                document.getElementById('no-validity-msg').classList.add('hidden');
-                document.getElementById('rep-validity-table').parentElement.classList.remove('hidden');
-            }
-
-            if(!hasStockIssues) {
-                document.getElementById('no-stock-msg').classList.remove('hidden');
-                document.getElementById('rep-stock-table').parentElement.classList.add('hidden');
-            } else {
-                document.getElementById('no-stock-msg').classList.add('hidden');
-                document.getElementById('rep-stock-table').parentElement.classList.remove('hidden');
-            }
 
             document.getElementById('rep-total').innerText = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
             document.getElementById('rep-items').innerText = totalItems;
-            // Removed erroneous line: document.getElementById('rep-low').innerText = lowStock;
             document.getElementById('rep-expired-count').innerText = expiredCount;
             
-            // Stats de Movimentação
             const recentMovs = movements.sort((a,b) => b.id - a.id).slice(0, 50);
             document.getElementById('rep-movs').innerText = recentMovs.length;
 
@@ -969,17 +1166,29 @@
         }
 
         function updateDashboard() {
-            let val = 0;
+            let valTotal = 0;
+            let valProd = 0;
+            let valMat = 0;
             let low = 0;
             let exp = 0;
+
             items.forEach(i => {
-                val += i.price * i.qty;
+                const itemTotal = i.price * i.qty;
+                valTotal += itemTotal;
+                
+                if (i.type === 'product') valProd += itemTotal;
+                else if (i.type === 'material') valMat += itemTotal;
+
                 if(i.qty <= i.minStock) low++;
                 
                 const st = getExpiryStatus(i.expiry);
-                if(st && (st.status === 'expired' || st.status === '7days' || st.status === '15days')) exp++;
+                if(st && (st.status === 'expired' || st.status === '7days')) exp++;
             });
-            document.getElementById('stat-total-value').innerText = val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+
+            document.getElementById('stat-total-value').innerText = valTotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            document.getElementById('stat-prod-value').innerText = valProd.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            document.getElementById('stat-mat-value').innerText = valMat.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+
             document.getElementById('stat-total-items').innerText = items.length;
             document.getElementById('stat-low-stock').innerText = low;
             document.getElementById('stat-expiring').innerText = exp;
@@ -992,8 +1201,9 @@
             setTimeout(() => t.classList.add('translate-y-24'), 3000);
         }
 
-        // Modals & Reset
         function openModal() { 
+            if(!checkPermission('create')) return alert("Sem permissão para criar itens.");
+            
             document.getElementById('itemForm').reset();
             document.getElementById('itemId').value = '';
             document.getElementById('modalTitle').innerText = "Novo Item";
@@ -1001,13 +1211,23 @@
             tempImageBase64 = null;
             document.getElementById('imagePreview').innerHTML = '<i class="fa-solid fa-camera text-3xl mb-2"></i><span class="text-xs">Adicionar Foto</span>';
             document.getElementById('btnClearImage').classList.add('hidden');
+            document.getElementById('btnDeleteItem').classList.add('hidden'); // Esconde Excluir no Modo Novo
+            document.getElementById('btnSaveItem').classList.remove('hidden'); // Mostra salvar
+            
+            // Reset Validade
+            document.getElementById('toggleValidity').checked = false;
+            toggleValiditySection();
         }
         function closeModal() { document.getElementById('itemModal').classList.add('hidden'); }
         function openEditModal(id) {
             const item = items.find(i => i.id === id);
             if(!item) return;
-            openModal();
-            document.getElementById('modalTitle').innerText = "Editar Item";
+            
+            const canEdit = checkPermission('edit');
+            const canDelete = currentRole === 'admin';
+
+            document.getElementById('itemForm').reset();
+            document.getElementById('modalTitle').innerText = canEdit ? "Editar Item" : "Detalhes do Item";
             document.getElementById('itemId').value = item.id;
             document.getElementById('itemName').value = item.name;
             document.getElementById('itemBarcode').value = item.barcode || '';
@@ -1017,8 +1237,28 @@
             document.getElementById('itemQty').value = item.qty;
             document.getElementById('itemUnit').value = item.unit;
             document.getElementById('itemMinStock').value = item.minStock;
-            document.getElementById('itemExpiry').value = item.expiry || '';
-            document.getElementById('itemNotes').value = item.notes || '';
+            
+            // Controles de Acesso no Modal
+            if (canDelete) document.getElementById('btnDeleteItem').classList.remove('hidden');
+            else document.getElementById('btnDeleteItem').classList.add('hidden');
+
+            if (canEdit) {
+                document.getElementById('btnSaveItem').classList.remove('hidden');
+                document.getElementById('itemForm').querySelectorAll('input, select').forEach(el => el.disabled = false);
+            } else {
+                // Modo Apenas Leitura
+                document.getElementById('btnSaveItem').classList.add('hidden');
+                document.getElementById('itemForm').querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
+
+            // Lógica Validade na Edição
+            const hasExpiry = !!item.expiry;
+            document.getElementById('toggleValidity').checked = hasExpiry;
+            toggleValiditySection();
+            if(hasExpiry) {
+                document.getElementById('itemExpiry').value = item.expiry;
+                document.getElementById('itemNotes').value = item.notes || '';
+            }
 
             if(item.hasImage) {
                 getImg(item.id).then(b64 => {
@@ -1028,9 +1268,11 @@
                     }
                 });
             }
+            document.getElementById('itemModal').classList.remove('hidden');
         }
         
         function handleImageUpload(e) {
+            if(!checkPermission('edit') && !checkPermission('create')) return;
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
@@ -1052,6 +1294,10 @@
             reader.readAsDataURL(file);
         }
         function clearImage() {
+            if(!checkPermission('edit') && !checkPermission('create')) return;
+            if(tempImageBase64) {
+                if(!confirm("Deseja remover esta imagem?")) return;
+            }
             tempImageBase64 = null;
             document.getElementById('imagePreview').innerHTML = '<i class="fa-solid fa-camera text-3xl mb-2"></i><span class="text-xs">Adicionar Foto</span>';
             document.getElementById('btnClearImage').classList.add('hidden');
@@ -1062,18 +1308,28 @@
             else openModal();
         }
         function openLicenseModal() { document.getElementById('licenseModal').classList.remove('hidden'); }
-        function openDataModal() { document.getElementById('dataModal').classList.remove('hidden'); }
+        function openDataModal() { 
+            // AGORA PERMITIDO PARA OPERADORES TAMBÉM
+            if(currentRole !== 'admin' && currentRole !== 'operator') return alert("Acesso negado.");
+            document.getElementById('dataModal').classList.remove('hidden'); 
+        }
         
         function exportData() {
-            const data = { items, movements };
+            // AGORA PERMITIDO PARA OPERADORES TAMBÉM
+            if(currentRole !== 'admin' && currentRole !== 'operator') return alert("Acesso negado.");
+            const data = { items, movements, locations };
             const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `Nexus_Backup_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
+            // Atualiza data do último backup
+            localStorage.setItem('nexus_last_backup_date', new Date().toISOString());
         }
         function importData(e) {
+            // IMPORTAÇÃO CONTINUA RESTRITA AO ADMIN (opcional, mas mais seguro)
+            if(currentRole !== 'admin') return alert("Apenas Administradores podem restaurar dados.");
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
@@ -1084,8 +1340,10 @@
                         if(confirm("Restaurar backup substituirá dados atuais. Continuar?")) {
                             items = data.items;
                             movements = data.movements || [];
+                            locations = data.locations || [];
                             saveData();
                             localStorage.setItem('nexus_movements', JSON.stringify(movements));
+                            localStorage.setItem('nexus_locations', JSON.stringify(locations));
                             renderItems();
                             document.getElementById('dataModal').classList.add('hidden');
                             showToast("Backup Restaurado!");
@@ -1099,7 +1357,17 @@
         window.addEventListener('load', () => {
             initDB();
             checkLicense();
-            renderItems();
+            // renderItems(); // Não renderiza até logar
+            
+            // Verifica backup silenciosamente apenas para o admin mais tarde
+            const lastBackup = localStorage.getItem('nexus_last_backup_date');
+            if(lastBackup) {
+                const diff = new Date() - new Date(lastBackup);
+                const hours = diff / (1000 * 60 * 60);
+                if(hours > 24 && currentRole === 'admin') {
+                    setTimeout(() => showToast("Lembrete: Faça seu backup diário!"), 2000);
+                }
+            }
         });
 
         const style = document.createElement('style');
@@ -1109,7 +1377,6 @@
             .label-text { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.25rem; }
         `;
         document.head.appendChild(style);
-
     </script>
 </body>
 </html>
