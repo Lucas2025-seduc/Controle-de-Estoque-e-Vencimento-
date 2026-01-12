@@ -1,6 +1,6 @@
-// Atualizei a versão do cache para v3 para garantir que o index.html novo seja carregado
-const CACHE_NAME = 'controle-estoque-v3';
-const DYNAMIC_CACHE = 'controle-estoque-dynamic-v3';
+// Atualizei a versão do cache para v4 para garantir que o index.html novo (com registro do SW) seja carregado
+const CACHE_NAME = 'controle-estoque-v4';
+const DYNAMIC_CACHE = 'controle-estoque-dynamic-v4';
 
 // Recursos críticos que DEVEM estar no cache para funcionar offline
 const PRECACHE_URLS = [
