@@ -1,6 +1,6 @@
-// Atualizei o nome do cache para refletir a mudança de nome do App
-const CACHE_NAME = 'controle-estoque-v1';
-const DYNAMIC_CACHE = 'controle-estoque-dynamic-v1';
+// Atualizei a versão do cache para v2 para forçar a atualização dos ícones
+const CACHE_NAME = 'controle-estoque-v2';
+const DYNAMIC_CACHE = 'controle-estoque-dynamic-v2';
 
 // Recursos críticos que DEVEM estar no cache para funcionar offline
 const PRECACHE_URLS = [
