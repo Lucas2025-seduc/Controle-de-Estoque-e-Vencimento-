@@ -1,6 +1,6 @@
-// Atualizei a versão do cache para v2 para forçar a atualização dos ícones
-const CACHE_NAME = 'controle-estoque-v2';
-const DYNAMIC_CACHE = 'controle-estoque-dynamic-v2';
+// Atualizei a versão do cache para v3 para garantir que o index.html novo seja carregado
+const CACHE_NAME = 'controle-estoque-v3';
+const DYNAMIC_CACHE = 'controle-estoque-dynamic-v3';
 
 // Recursos críticos que DEVEM estar no cache para funcionar offline
 const PRECACHE_URLS = [
