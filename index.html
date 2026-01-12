@@ -9,10 +9,6 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="description" content="Sistema profissional de gestão de estoque com controle de permissões.">
     
-    <!-- 
-        MANIFEST PWA CORRIGIDO 
-        Atualizado com o nome "ControleEstoque"
-    -->
     <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29udHJvbGVFc3RvcXVlIiwic2hvcnRfbmFtZSI6IkNvbnRyb2xlRXN0b3F1ZSIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxNzJhIiwidGhlbWVfY29sb3IiOiIjMGYxNzJhIiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzMxMzUvMzEzNTcxNS5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn0seyJzcmMiOiJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8zMTM1LzMxMzU3MTUucG5nIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,7 +39,7 @@
         @media print {
             @page { size: A4; margin: 1cm; }
             body { background: white; font-size: 10pt; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .no-print, nav, .fixed, button, #toast, #filterType, #filterStatus, #searchInput, .card-actions, #loginOverlay, #passwordModal, #installBtnContainer { display: none !important; }
+            .no-print, nav, .fixed, button, #toast, #filterType, #filterStatus, #searchInput, .card-actions, #loginOverlay, #passwordModal, #installBtnContainer, #operatorLoginModal { display: none !important; }
             #reportModal { position: static !important; display: block !important; background: white !important; height: auto !important; overflow: visible !important; }
             #reportContent { box-shadow: none !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
@@ -93,6 +89,32 @@
         </div>
     </div>
 
+    <!-- MODAL LOGIN OPERADOR (ESPECÍFICO) -->
+    <div id="operatorLoginModal" class="fixed inset-0 bg-slate-900/90 z-[1100] hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-xl p-6 w-full max-w-xs text-center shadow-2xl">
+            <div class="mb-4 text-emerald-600">
+                <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                    <i class="fa-solid fa-user-tag text-xl"></i>
+                </div>
+            </div>
+            <h3 class="font-bold text-lg mb-4 text-slate-800">Quem é você?</h3>
+            
+            <select id="operatorSelect" class="w-full border-2 border-slate-200 p-3 rounded-xl mb-4 bg-slate-50 outline-none focus:border-emerald-500 font-bold text-slate-700" onchange="checkOperatorPasswordRequirement()">
+                <!-- Populated by JS -->
+            </select>
+
+            <div id="operatorPassField" class="hidden">
+                <p class="text-xs text-slate-500 mb-2 text-left px-1">Sua Senha:</p>
+                <input type="password" id="operatorPassInput" class="w-full border-2 border-slate-200 p-3 rounded-xl mb-4 text-center focus:border-emerald-500 outline-none font-bold text-lg text-slate-700" placeholder="••••">
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('operatorLoginModal').classList.add('hidden')" class="w-1/2 bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-600 transition">Voltar</button>
+                <button onclick="attemptOperatorLogin()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold text-white transition shadow-lg shadow-emerald-200">Acessar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- TELA DE BLOQUEIO (TRIAL EXPIRADO) -->
     <div id="lockScreen" class="fixed inset-0 bg-slate-900 z-[2000] hidden flex flex-col items-center justify-center p-6 text-center">
         <div class="bg-red-500/10 p-6 rounded-full mb-6 animate-pulse">
@@ -109,7 +131,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE SENHA -->
+    <!-- MODAL DE SENHA ADMIN -->
     <div id="passwordModal" class="fixed inset-0 bg-slate-900/90 z-[1100] hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
         <div class="bg-white rounded-xl p-6 w-full max-w-xs text-center shadow-2xl">
             <div class="mb-4 text-indigo-600">
@@ -129,30 +151,35 @@
 
     <!-- Navegação -->
     <nav class="bg-slate-900 text-white shadow-lg z-50 no-print flex-shrink-0">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="openLicenseModal()">
+        <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3 cursor-pointer self-start md:self-auto" onclick="openLicenseModal()">
                 <div class="relative">
                     <div class="bg-indigo-600 p-2 rounded-lg"><i class="fa-solid fa-cube text-xl"></i></div>
                     <div id="licenseDot" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">ControleEstoque <span id="userRoleBadge" class="text-[10px] bg-slate-700 px-2 py-0.5 rounded ml-1 text-white uppercase tracking-wider">VISITANTE</span></h1>
+                    <h1 class="text-lg font-bold leading-tight flex items-center gap-2">ControleEstoque <span id="userRoleBadge" class="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-white uppercase tracking-wider">VISITANTE</span></h1>
                     <p class="text-[10px] text-slate-400">ID: <span id="navDeviceId">...</span></p>
                 </div>
             </div>
             
-            <div class="flex gap-2 md:gap-3 items-center">
+            <div class="flex gap-2 md:gap-3 items-center flex-wrap justify-center">
                 <!-- Botão de Instalação PWA (Modificado para estar visível) -->
-                <button id="installAppBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-purple-500/30">
+                <button id="installAppBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-purple-500/30 text-xs md:text-sm">
                     <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Instalar</span>
                 </button>
 
-                <button onclick="openMovementModal()" id="navBtnMove" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30 transform hover:scale-105">
+                <button onclick="openMovementModal()" id="navBtnMove" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30 transform hover:scale-105 text-xs md:text-sm">
                     <i class="fa-solid fa-qrcode"></i> <span class="hidden md:inline">MOVIMENTAR</span>
                 </button>
                 
                 <button onclick="openLocationsModal()" id="navBtnLoc" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200" title="Locais">
                     <i class="fa-solid fa-map-location-dot"></i>
+                </button>
+
+                <!-- NOVO: Botão Gestão de Equipe (Só Admin) -->
+                <button onclick="openOperatorManagement()" id="navBtnTeam" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200 hidden" title="Equipe / Operadores">
+                    <i class="fa-solid fa-users-gear"></i>
                 </button>
 
                 <button onclick="generateReport()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition text-slate-200" title="Relatórios">
@@ -163,12 +190,12 @@
                     <i class="fa-solid fa-database"></i>
                 </button>
 
-                <button onclick="checkLimitAndOpenModal()" id="navBtnNew" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30">
+                <button onclick="checkLimitAndOpenModal()" id="navBtnNew" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30 text-xs md:text-sm">
                     <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Item</span>
                 </button>
 
-                <button onclick="logout()" class="ml-2 text-slate-400 hover:text-red-400 transition text-sm flex flex-col items-center" title="Sair">
-                    <i class="fa-solid fa-power-off"></i>
+                <button onclick="logout()" class="ml-2 bg-red-500/20 hover:bg-red-500 hover:text-white text-red-300 border border-red-500/30 px-3 py-2 rounded-lg transition text-xs font-bold flex items-center gap-2" title="Voltar para Login">
+                    <i class="fa-solid fa-power-off"></i> Sair
                 </button>
             </div>
         </div>
@@ -350,6 +377,32 @@
                 <button type="submit" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700 font-bold">+</button>
             </form>
             <ul id="locationsList" class="max-h-60 overflow-y-auto space-y-2"></ul>
+        </div>
+    </div>
+
+    <!-- NOVO: Modal Gerenciar Operadores -->
+    <div id="manageOperatorsModal" class="fixed inset-0 bg-slate-900/80 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col max-h-[80vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800"><i class="fa-solid fa-users-gear"></i> Gestão de Equipe</h3>
+                <button onclick="document.getElementById('manageOperatorsModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <form onsubmit="addOperator(event)" class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <p class="text-xs font-bold text-slate-500 uppercase mb-2">Novo Operador</p>
+                <div class="space-y-2">
+                    <input type="text" id="newOpName" required placeholder="Nome (Ex: João)" class="w-full border p-2 rounded-lg outline-none focus:border-indigo-500 text-sm">
+                    <input type="text" id="newOpPass" placeholder="Senha (Opcional)" class="w-full border p-2 rounded-lg outline-none focus:border-indigo-500 text-sm">
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-bold text-sm">Adicionar</button>
+                </div>
+            </form>
+
+            <div class="flex-grow overflow-y-auto">
+                <p class="text-xs font-bold text-slate-500 uppercase mb-2">Operadores Cadastrados</p>
+                <ul id="operatorsList" class="space-y-2">
+                    <!-- Lista injetada via JS -->
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -563,12 +616,14 @@
         let items = [];
         let movements = [];
         let locations = [];
+        let operators = []; // NEW: Lista de Operadores
         let db; // IndexedDB Instance
         let html5QrcodeScanner = null;
         let scanTarget = null;
         let tempImageBase64 = null;
         let isLicensed = false;
         let currentRole = null;
+        let currentOperatorName = ""; // Nome do operador atual
         
         // --- IDENTIFICAÇÃO DO DISPOSITIVO ---
         let deviceId = localStorage.getItem('nexus_device_id');
@@ -662,28 +717,21 @@
             try {
                 await dbPromise;
                 
-                // Carregar Configurações Principais (Items, Movements, Locations)
+                // Carregar Configurações Principais (Items, Movements, Locations, Operators)
                 const tx = db.transaction(['data'], 'readonly');
                 const store = tx.objectStore('data');
                 
                 const pItems = new Promise(r => { const req = store.get('items'); req.onsuccess = () => r(req.result ? req.result.val : null); });
                 const pMovs = new Promise(r => { const req = store.get('movements'); req.onsuccess = () => r(req.result ? req.result.val : null); });
                 const pLocs = new Promise(r => { const req = store.get('locations'); req.onsuccess = () => r(req.result ? req.result.val : null); });
+                const pOps = new Promise(r => { const req = store.get('operators'); req.onsuccess = () => r(req.result ? req.result.val : null); });
                 
-                const [dbItems, dbMovs, dbLocs] = await Promise.all([pItems, pMovs, pLocs]);
+                const [dbItems, dbMovs, dbLocs, dbOps] = await Promise.all([pItems, pMovs, pLocs, pOps]);
                 
-                // Se IDB estiver vazio, tenta migrar do LocalStorage (Legado)
-                if (!dbItems && localStorage.getItem('nexus_items')) {
-                    console.log("Migrando dados do LocalStorage para IndexedDB...");
-                    items = JSON.parse(localStorage.getItem('nexus_items')) || [];
-                    movements = JSON.parse(localStorage.getItem('nexus_movements')) || [];
-                    locations = JSON.parse(localStorage.getItem('nexus_locations')) || ['Estoque Central'];
-                    await saveData(); // Salva no IDB
-                } else {
-                    items = dbItems || [];
-                    movements = dbMovs || [];
-                    locations = dbLocs || ['Estoque Central', 'Loja', 'Produção'];
-                }
+                items = dbItems || [];
+                movements = dbMovs || [];
+                locations = dbLocs || ['Estoque Central', 'Loja', 'Produção'];
+                operators = dbOps || []; // Carrega operadores
                 
                 document.getElementById('dbLoading').classList.add('opacity-0');
                 setTimeout(() => document.getElementById('dbLoading').remove(), 500);
@@ -703,9 +751,9 @@
                 store.put({ key: 'items', val: items });
                 store.put({ key: 'movements', val: movements });
                 store.put({ key: 'locations', val: locations });
+                store.put({ key: 'operators', val: operators });
             }
             
-            // Backup minimalista no LocalStorage apenas para metadados (opcional, mantendo compatibilidade leve)
             updateDashboard();
             updateLicenseUI();
         }
@@ -723,9 +771,6 @@
         //  MÓDULO DE SEGURANÇA & LICENÇA (OFUSCADO)
         // =========================================================================
         
-        // Strings Ofuscadas: 
-        // 0: admin, 1: nexus_license_key, 2: NEXUS_ENTERPRISE, 3: (Senha Hash Corrigida), 4: NX_SECURE_V4_8821
-        // CORREÇÃO: Removido \x40 (inválido) e substituído por \x41 (A) na posição 7 do hash
         var _0xsec = ['\x61\x64\x6D\x69\x6E', '\x6E\x65\x78\x75\x73\x5F\x6C\x69\x63\x65\x6E\x73\x65\x5F\x6B\x65\x79', '\x4E\x45\x58\x55\x53', '\x54\x6A\x4E\x34\x64\x58\x4E\x41\x51\x57\x52\x74\x4D\x6A\x41\x79\x4E\x53\x45\x3D', 'NX_SECURE_V4_8821'];
         
         function confirmAdminLogin() {
@@ -733,7 +778,7 @@
             const _h = btoa(input);
             if(_h === _0xsec[3]) {
                 closePasswordModal();
-                completeLogin(_0xsec[0]);
+                completeLogin(_0xsec[0], "ADMINISTRADOR");
             } else {
                 alert("Senha incorreta!");
                 document.getElementById('adminPassInput').value = '';
@@ -747,11 +792,9 @@
                 const decoded = atob(keyStr);
                 const parts = decoded.split('|'); // ID | DATE | SIGNATURE
                 
-                // Validação de Integridade
                 if (parts.length !== 3) return false;
-                if (parts[0] !== deviceId) return false; // Bloqueia uso em outro PC
+                if (parts[0] !== deviceId) return false; 
                 
-                // Validar Assinatura (Hashing simples para conferir se data não foi alterada)
                 const rawCheck = parts[0] + "|" + parts[1] + "|" + _0xsec[4];
                 let hash = 0;
                 for (let i = 0; i < rawCheck.length; i++) {
@@ -763,7 +806,6 @@
                 
                 if (parts[2] !== expectedSig) return false;
 
-                // Validar Data
                 const expiry = new Date(parts[1]);
                 const today = new Date();
                 today.setHours(0,0,0,0);
@@ -778,10 +820,9 @@
             const saved = localStorage.getItem(_0xsec[1]);
             isLicensed = _validateKeyLogic(saved);
             
-            // UI Updates
             document.getElementById('deviceIdDisplay').innerText = deviceId;
             updateLicenseUI();
-            checkTrialStatus(); // Re-verifica o trial
+            checkTrialStatus();
         }
 
         function activateLicense() {
@@ -805,37 +846,136 @@
                 document.getElementById('passwordModal').classList.remove('hidden');
                 setTimeout(() => document.getElementById('adminPassInput').focus(), 100);
             } else {
-                completeLogin(role);
+                // LOGICA DE OPERADOR ATUALIZADA
+                if (operators.length === 0) {
+                    // Sem operadores cadastrados -> Modo genérico
+                    completeLogin('operator', "OPERADOR");
+                } else {
+                    // Tem operadores -> Abre modal de seleção
+                    openOperatorLoginModal();
+                }
             }
         }
+
+        // --- GESTÃO DE OPERADORES ---
+
+        function openOperatorLoginModal() {
+            const sel = document.getElementById('operatorSelect');
+            sel.innerHTML = '<option value="" disabled selected>Selecione seu nome...</option>';
+            operators.forEach((op, idx) => {
+                sel.innerHTML += `<option value="${idx}">${op.name}</option>`;
+            });
+            document.getElementById('operatorPassInput').value = '';
+            document.getElementById('operatorPassField').classList.add('hidden');
+            document.getElementById('operatorLoginModal').classList.remove('hidden');
+        }
+
+        function checkOperatorPasswordRequirement() {
+            const idx = document.getElementById('operatorSelect').value;
+            if (idx === "") return;
+            const op = operators[idx];
+            if (op && op.password) {
+                document.getElementById('operatorPassField').classList.remove('hidden');
+            } else {
+                document.getElementById('operatorPassField').classList.add('hidden');
+            }
+        }
+
+        function attemptOperatorLogin() {
+            const idx = document.getElementById('operatorSelect').value;
+            if (idx === "") return alert("Selecione um operador.");
+            
+            const op = operators[idx];
+            const inputPass = document.getElementById('operatorPassInput').value;
+
+            if (op.password && op.password.trim() !== "") {
+                if (inputPass !== op.password) {
+                    alert("Senha incorreta.");
+                    return;
+                }
+            }
+
+            document.getElementById('operatorLoginModal').classList.add('hidden');
+            completeLogin('operator', op.name.toUpperCase());
+        }
+
+        // --- GESTÃO PELO ADMIN ---
+
+        function openOperatorManagement() {
+            if (currentRole !== 'admin') return;
+            renderOperatorsList();
+            document.getElementById('manageOperatorsModal').classList.remove('hidden');
+        }
+
+        function renderOperatorsList() {
+            const list = document.getElementById('operatorsList');
+            list.innerHTML = '';
+            if (operators.length === 0) {
+                list.innerHTML = '<li class="text-sm text-slate-400 italic">Nenhum operador cadastrado.</li>';
+                return;
+            }
+            operators.forEach((op, index) => {
+                const hasPass = op.password ? '<i class="fa-solid fa-lock text-emerald-500 ml-2" title="Com Senha"></i>' : '<span class="text-xs text-slate-400 ml-2">(Sem Senha)</span>';
+                list.innerHTML += `
+                    <li class="flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-100">
+                        <span class="font-medium text-slate-700">${op.name} ${hasPass}</span>
+                        <button type="button" onclick="removeOperator(${index})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition" title="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </li>
+                `;
+            });
+        }
+
+        function addOperator(e) {
+            e.preventDefault();
+            const name = document.getElementById('newOpName').value.trim();
+            const pass = document.getElementById('newOpPass').value.trim();
+
+            if (!name) return alert("Nome é obrigatório.");
+
+            operators.push({ name: name, password: pass });
+            saveData();
+            
+            document.getElementById('newOpName').value = '';
+            document.getElementById('newOpPass').value = '';
+            renderOperatorsList();
+            showToast("Operador adicionado!");
+        }
+
+        function removeOperator(index) {
+            if (confirm("Remover este operador?")) {
+                operators.splice(index, 1);
+                saveData();
+                renderOperatorsList();
+            }
+        }
+
+        // -----------------------------
 
         function closePasswordModal() {
             document.getElementById('passwordModal').classList.add('hidden');
             document.getElementById('adminPassInput').value = '';
         }
 
-        function completeLogin(role) {
+        function completeLogin(role, displayName) {
             currentRole = role;
+            currentOperatorName = displayName;
             document.getElementById('loginOverlay').classList.add('hidden');
             updateUIForRole();
-            showToast(`Bem-vindo, ${role === 'admin' ? 'ADMINISTRADOR' : 'OPERADOR'}`);
+            showToast(`Bem-vindo, ${displayName}`);
             
             // Lógica de instalação PWA Melhorada
             const btn = document.getElementById('installAppBtn');
-            
-            // 1. Tenta usar o evento nativo se disponível
             if(deferredPrompt) {
                 btn.onclick = async () => {
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        deferredPrompt = null;
-                    }
+                    if (outcome === 'accepted') deferredPrompt = null;
                 };
             } else {
-                // 2. Fallback para instalação manual
                 btn.onclick = () => {
-                    alert("Para instalar:\n\n1. No Chrome/Android: Toque nos 3 pontinhos -> 'Instalar aplicativo' ou 'Adicionar à tela inicial'.\n\n2. No iOS (Safari): Toque em Compartilhar -> 'Adicionar à Tela de Início'.\n\n3. No PC: Procure o ícone de instalação na barra de endereço.");
+                    alert("Para instalar:\n\n1. No Chrome/Android: Toque nos 3 pontinhos -> 'Instalar aplicativo'.\n\n2. No iOS (Safari): Toque em Compartilhar -> 'Adicionar à Tela de Início'.");
                 };
             }
         }
@@ -846,17 +986,18 @@
 
         function logout() {
             currentRole = null;
+            currentOperatorName = "";
             document.getElementById('loginOverlay').classList.remove('hidden');
         }
 
         function updateUIForRole() {
-            const roleLabels = { admin: 'ADMINISTRADOR', operator: 'OPERADOR' };
-            document.getElementById('userRoleBadge').innerText = roleLabels[currentRole];
+            document.getElementById('userRoleBadge').innerText = currentOperatorName;
             
             const btnMove = document.getElementById('navBtnMove');
             const btnLoc = document.getElementById('navBtnLoc');
             const btnData = document.getElementById('navBtnData');
             const btnNew = document.getElementById('navBtnNew');
+            const btnTeam = document.getElementById('navBtnTeam');
             const licBanner = document.getElementById('licenseStatusBanner');
             const dashPatrimony = document.getElementById('dashboardPatrimonyCard');
 
@@ -866,11 +1007,13 @@
             btnNew.classList.remove('hidden');
             licBanner.classList.remove('hidden');
             dashPatrimony.classList.remove('hidden');
+            btnTeam.classList.remove('hidden'); // Exibe botão de equipe por padrão para admin
 
             if (currentRole === 'operator') {
                 btnLoc.classList.add('hidden');
                 licBanner.classList.add('hidden');
                 dashPatrimony.classList.add('hidden');
+                btnTeam.classList.add('hidden'); // Oculta botão de equipe para operador
             }
             renderItems();
         }
@@ -1291,11 +1434,16 @@
             const tbodyGen = document.getElementById('rep-general-table');
             tbodyGen.innerHTML = '';
             
+            // Verificação de permissão para ver valores financeiros
+            const canViewValues = currentRole === 'admin';
+
             items.forEach(i => {
                 totalVal += i.price * i.qty;
                 totalItems++;
                 const exp = getExpiryStatus(i.expiry);
                 if(exp && exp.status === 'expired') expiredCount++;
+
+                const rowValueDisplay = canViewValues ? `R$ ${(i.price * i.qty).toFixed(2)}` : '******';
 
                 tbodyGen.innerHTML += `
                     <tr>
@@ -1303,12 +1451,15 @@
                         <td>${i.name}</td>
                         <td>${i.location || '-'}</td>
                         <td class="text-right font-bold">${i.qty} ${i.unit}</td>
-                        <td class="text-right">R$ ${(i.price * i.qty).toFixed(2)}</td>
+                        <td class="text-right">${rowValueDisplay}</td>
                     </tr>
                 `;
             });
 
-            document.getElementById('rep-total').innerText = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('rep-total').innerText = canViewValues ? 
+                'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 
+                '******';
+
             document.getElementById('rep-items').innerText = totalItems;
             document.getElementById('rep-expired-count').innerText = expiredCount;
             
@@ -1466,7 +1617,7 @@
         
         function exportData() {
             if(currentRole !== 'admin' && currentRole !== 'operator') return alert("Acesso negado.");
-            const data = { items, movements, locations };
+            const data = { items, movements, locations, operators }; // Exporta operadores também
             const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1488,6 +1639,7 @@
                             items = data.items;
                             movements = data.movements || [];
                             locations = data.locations || [];
+                            operators = data.operators || []; // Restaura operadores
                             await saveData();
                             renderItems();
                             document.getElementById('dataModal').classList.add('hidden');
