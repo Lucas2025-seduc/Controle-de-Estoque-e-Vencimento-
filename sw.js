@@ -1,8 +1,8 @@
-const CACHE_NAME = 'nexus-enterprise-v1';
-const DYNAMIC_CACHE = 'nexus-dynamic-v1';
+// Atualizei o nome do cache para refletir a mudança de nome do App
+const CACHE_NAME = 'controle-estoque-v1';
+const DYNAMIC_CACHE = 'controle-estoque-dynamic-v1';
 
 // Recursos críticos que DEVEM estar no cache para funcionar offline
-// Inclui seus CDNs específicos detectados no index.html
 const PRECACHE_URLS = [
   './',
   './index.html',
