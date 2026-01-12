@@ -5,16 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ControleEstoque - Gestão Pro</title>
     
-    <!-- PWA Meta Tags & Manifest Embutido (Data URI) -->
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0f172a">
     <meta name="description" content="Sistema profissional de gestão de estoque com controle de permissões.">
     
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29udHJvbGVFc3RvcXVlIiwic2hvcnRfbmFtZSI6IkNvbnRyb2xlRXN0b3F1ZSIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxNzJhIiwidGhlbWVfY29sb3IiOiIjMGYxNzJhIiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzMxMzUvMzEzNTcxNS5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn0seyJzcmMiOiJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8zMTM1LzMxMzU3MTUucG5nIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=">
+    <!-- CORREÇÃO 1: Removi o código gigante (data:...) e apontei para o arquivo real -->
+    <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ControleEstoque">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    
+    <!-- CORREÇÃO 2: Apontei para suas imagens locais ao invés do link da internet -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" href="icon-192.png">
     
     <!-- Ícones e Estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
