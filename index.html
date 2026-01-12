@@ -9,14 +9,14 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="description" content="Sistema profissional de gestão de estoque com controle de permissões.">
     
-    <!-- CORREÇÃO 1: Removi o código gigante (data:...) e apontei para o arquivo real -->
+    <!-- MANIFESTO EXTERNO (Corrigido) -->
     <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ControleEstoque">
     
-    <!-- CORREÇÃO 2: Apontei para suas imagens locais ao invés do link da internet -->
+    <!-- Ícones apontando para arquivos locais -->
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/png" href="icon-192.png">
     
@@ -168,9 +168,9 @@
             </div>
             
             <div class="flex gap-2 md:gap-3 items-center flex-wrap justify-center">
-                <!-- Botão de Instalação PWA (Modificado para estar visível) -->
+                <!-- Botão de Instalação PWA -->
                 <button id="installAppBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-purple-500/30 text-xs md:text-sm">
-                    <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Instalar</span>
+                    <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Instalar App</span>
                 </button>
 
                 <button onclick="openMovementModal()" id="navBtnMove" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30 transform hover:scale-105 text-xs md:text-sm">
@@ -969,19 +969,25 @@
             updateUIForRole();
             showToast(`Bem-vindo, ${displayName}`);
             
-            // Lógica de instalação PWA Melhorada
+            // --- CORREÇÃO DA LÓGICA DE INSTALAÇÃO PWA ---
+            // O código anterior configurava o botão APENAS no momento do login.
+            // Se o evento deferredPrompt ainda não tivesse acontecido, ele travava na "instrução".
+            // Agora, o evento click verifica o estado ATUAL do deferredPrompt.
+            
             const btn = document.getElementById('installAppBtn');
-            if(deferredPrompt) {
-                btn.onclick = async () => {
+            btn.onclick = async () => {
+                if(deferredPrompt) {
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') deferredPrompt = null;
-                };
-            } else {
-                btn.onclick = () => {
+                    if (outcome === 'accepted') {
+                        deferredPrompt = null;
+                        console.log('Instalação aceita');
+                    }
+                } else {
+                    // Fallback se o navegador não suportar ou já estiver instalado
                     alert("Para instalar:\n\n1. No Chrome/Android: Toque nos 3 pontinhos -> 'Instalar aplicativo'.\n\n2. No iOS (Safari): Toque em Compartilhar -> 'Adicionar à Tela de Início'.");
-                };
-            }
+                }
+            };
         }
 
         document.getElementById('adminPassInput').addEventListener('keypress', function (e) {
