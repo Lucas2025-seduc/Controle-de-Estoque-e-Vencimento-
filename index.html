@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Enterprise 3.8 - Gestão Pro</title>
+    <title>Nexus Enterprise 4.0 - Gestão Pro</title>
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA Meta Tags & Manifest Embutido (Data URI) -->
     <meta name="theme-color" content="#0f172a">
     <meta name="description" content="Sistema profissional de gestão de estoque com controle de permissões.">
-    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Manifest codificado em Base64 para funcionar em arquivo único -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIk5leHVzIEVudGVycHJpc2UgNC4wIiwKICAic2hvcnRfbmFtZSI6ICJOZXh1cyBQcm8iLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMTcyYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwZjE3MmEiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8zMTM1LzMxMzU3MTUucG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9CiAgXQp9">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nexus Pro">
     
     <!-- Ícones e Estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,10 +33,13 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
+        /* Loading Overlay */
+        #dbLoading { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: opacity 0.5s; }
+        
         @media print {
             @page { size: A4; margin: 1cm; }
             body { background: white; font-size: 10pt; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .no-print, nav, .fixed, button, #toast, #filterType, #filterStatus, #searchInput, .card-actions, #loginOverlay, #passwordModal { display: none !important; }
+            .no-print, nav, .fixed, button, #toast, #filterType, #filterStatus, #searchInput, .card-actions, #loginOverlay, #passwordModal, #installBtnContainer { display: none !important; }
             #reportModal { position: static !important; display: block !important; background: white !important; height: auto !important; overflow: visible !important; }
             #reportContent { box-shadow: none !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
@@ -41,15 +50,23 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
+    <!-- LOADING SCREEN -->
+    <div id="dbLoading">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-4 text-indigo-500"></i>
+        <h2 class="text-xl font-bold">Carregando Banco de Dados...</h2>
+        <p class="text-slate-400 text-sm mt-2">Sincronizando IndexedDB</p>
+    </div>
+
     <!-- TELA DE LOGIN -->
-    <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-[1000] flex items-center justify-center p-4">
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-[1000] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
-            <div class="bg-indigo-600 p-8 text-center">
-                <div class="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <div class="bg-indigo-600 p-8 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-2 opacity-10"><i class="fa-solid fa-server text-9xl text-white"></i></div>
+                <div class="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm relative z-10">
                     <i class="fa-solid fa-cube text-3xl text-white"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-white">Nexus Enterprise 3.8</h1>
-                <p class="text-indigo-200 text-sm">Selecione seu perfil de acesso</p>
+                <h1 class="text-2xl font-bold text-white relative z-10">Nexus Enterprise 4.0</h1>
+                <p class="text-indigo-200 text-sm relative z-10">Sistema de Gestão Profissional</p>
             </div>
             
             <div class="p-8 space-y-4">
@@ -72,6 +89,22 @@
         </div>
     </div>
 
+    <!-- TELA DE BLOQUEIO (TRIAL EXPIRADO) -->
+    <div id="lockScreen" class="fixed inset-0 bg-slate-900 z-[2000] hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="bg-red-500/10 p-6 rounded-full mb-6 animate-pulse">
+            <i class="fa-solid fa-lock text-6xl text-red-500"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-white mb-2">Período de Teste Expirado</h1>
+        <p class="text-slate-400 max-w-md mb-8">O período gratuito de 3 horas encerrou. Para continuar acessando seus dados e utilizando o sistema, ative uma licença.</p>
+        
+        <div class="bg-slate-800 p-6 rounded-xl w-full max-w-sm border border-slate-700">
+            <p class="text-sm text-slate-300 mb-2">Seu ID de Dispositivo:</p>
+            <div class="bg-slate-900 p-3 rounded border border-slate-600 font-mono text-emerald-400 font-bold mb-4 select-all" id="lockDeviceId">...</div>
+            <input type="text" id="lockLicenseInput" class="w-full bg-slate-100 border-none p-3 rounded mb-3 text-center uppercase font-bold text-slate-900 placeholder-slate-400" placeholder="Cole sua Licença Aqui">
+            <button onclick="attemptUnlock()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold transition shadow-lg shadow-emerald-900/50">Ativar Sistema</button>
+        </div>
+    </div>
+
     <!-- MODAL DE SENHA -->
     <div id="passwordModal" class="fixed inset-0 bg-slate-900/90 z-[1100] hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
         <div class="bg-white rounded-xl p-6 w-full max-w-xs text-center shadow-2xl">
@@ -82,9 +115,7 @@
             </div>
             <h3 class="font-bold text-lg mb-1 text-slate-800">Senha de Administrador</h3>
             <p class="text-xs text-slate-500 mb-4">Digite sua senha segura</p>
-            
             <input type="password" id="adminPassInput" class="w-full border-2 border-slate-200 p-3 rounded-xl mb-4 text-center focus:border-indigo-500 outline-none font-bold text-lg text-slate-700" placeholder="••••••••">
-            
             <div class="flex gap-2">
                 <button onclick="closePasswordModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-bold text-slate-600 transition">Voltar</button>
                 <button onclick="confirmAdminLogin()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl font-bold text-white transition shadow-lg shadow-indigo-200">Entrar</button>
@@ -107,6 +138,11 @@
             </div>
             
             <div class="flex gap-2 md:gap-3 items-center">
+                <!-- Botão de Instalação PWA (Modificado para estar visível) -->
+                <button id="installAppBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-purple-500/30">
+                    <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Instalar</span>
+                </button>
+
                 <button onclick="openMovementModal()" id="navBtnMove" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-5 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30 transform hover:scale-105">
                     <i class="fa-solid fa-qrcode"></i> <span class="hidden md:inline">MOVIMENTAR</span>
                 </button>
@@ -134,9 +170,9 @@
         </div>
     </nav>
 
-    <!-- Banner Versão Gratuita -->
+    <!-- Banner Versão Gratuita / Trial -->
     <div id="licenseStatusBanner" class="bg-slate-800 text-slate-300 text-xs text-center py-1 no-print cursor-pointer hover:bg-slate-700 transition flex-shrink-0" onclick="openLicenseModal()">
-        Versão Gratuita: <span id="freeCountDisplay">0</span>/5 itens. <span class="text-amber-400 underline ml-1">Ativar PRO</span>
+        <span id="trialTimerDisplay">Modo Trial: Verificando...</span> <span class="text-amber-400 underline ml-1">Ativar PRO</span>
     </div>
 
     <!-- Conteúdo Principal Scrollável -->
@@ -211,6 +247,7 @@
         </div>
     </div>
 
+    <!-- Resto do HTML (Modais e Componentes UI mantidos e melhorados) -->
     <!-- MODAL DE MOVIMENTAÇÃO SIMPLIFICADA -->
     <div id="movementModal" class="fixed inset-0 bg-slate-900/90 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[95vh]">
@@ -238,9 +275,7 @@
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
                     </div>
 
-                    <div id="movSearchResults" class="hidden flex-grow overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner max-h-[300px]">
-                        <!-- Resultados aqui -->
-                    </div>
+                    <div id="movSearchResults" class="hidden flex-grow overflow-y-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner max-h-[300px]"></div>
                 </div>
             </div>
 
@@ -259,7 +294,6 @@
 
                 <form onsubmit="handleMovementSubmit(event)" class="p-6 flex flex-col gap-6 overflow-y-auto">
                     <input type="hidden" id="movItemId">
-                    
                     <div class="grid grid-cols-2 gap-4">
                         <label class="cursor-pointer">
                             <input type="radio" name="movType" value="in" class="peer sr-only" onchange="updateMovUI()" checked>
@@ -276,7 +310,6 @@
                             </div>
                         </label>
                     </div>
-
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-xs font-bold text-slate-500 uppercase">Quantidade</label>
@@ -288,20 +321,14 @@
                             <button type="button" onclick="adjustQty(1)" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xl">+</button>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="movLocationLabel">Destino / Departamento</label>
                         <div class="flex gap-2">
-                            <select id="movLocationSelect" class="w-full p-3 bg-white border border-slate-300 rounded-lg text-slate-700 outline-none focus:border-indigo-500">
-                                <!-- Populado via JS -->
-                            </select>
+                            <select id="movLocationSelect" class="w-full p-3 bg-white border border-slate-300 rounded-lg text-slate-700 outline-none focus:border-indigo-500"></select>
                             <button type="button" onclick="openLocationsModal()" class="bg-slate-200 px-3 rounded-lg hover:bg-slate-300 text-slate-600"><i class="fa-solid fa-gear"></i></button>
                         </div>
                     </div>
-
-                    <button type="submit" id="btnConfirmMov" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 transition transform active:scale-95 mt-auto">
-                        CONFIRMAR ENTRADA
-                    </button>
+                    <button type="submit" id="btnConfirmMov" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 transition transform active:scale-95 mt-auto">CONFIRMAR ENTRADA</button>
                 </form>
             </div>
         </div>
@@ -314,16 +341,11 @@
                 <h3 class="font-bold text-lg"><i class="fa-solid fa-map-location-dot"></i> Gerenciar Locais</h3>
                 <button onclick="document.getElementById('locationsModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
             </div>
-            
             <form onsubmit="addLocation(event)" class="flex gap-2 mb-4">
                 <input type="text" id="newLocationInput" required placeholder="Novo local (ex: Setor B)" class="flex-grow border p-2 rounded-lg outline-none focus:border-indigo-500">
                 <button type="submit" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700 font-bold">+</button>
             </form>
-
-            <ul id="locationsList" class="max-h-60 overflow-y-auto space-y-2">
-                <!-- Lista injetada via JS -->
-            </ul>
-            <p class="text-xs text-slate-400 mt-4 text-center">Esses locais aparecerão nas opções de Entrada e Saída.</p>
+            <ul id="locationsList" class="max-h-60 overflow-y-auto space-y-2"></ul>
         </div>
     </div>
 
@@ -375,7 +397,7 @@
                             </div>
 
                             <div>
-                                <label class="label-text">Localização Padrão <span class="text-slate-400 font-normal ml-1">(Opcional)</span></label>
+                                <label class="label-text">Localização</label>
                                 <input type="text" id="itemLocation" class="input-field" placeholder="Ex: Prateleira A1">
                             </div>
 
@@ -406,27 +428,23 @@
                             <div class="md:col-span-2 bg-slate-50 p-3 rounded-lg border border-slate-200" id="validityContainer">
                                 <div class="flex justify-between items-center">
                                     <h4 class="text-xs font-bold text-slate-700 flex items-center gap-2"><i class="fa-regular fa-clock"></i> Controle de Validade</h4>
-                                    
                                     <label class="inline-flex items-center cursor-pointer">
                                         <input type="checkbox" id="toggleValidity" class="sr-only peer" onchange="toggleValiditySection()">
-                                        <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                                         <span class="ms-2 text-xs font-medium text-slate-500">Ativar</span>
                                     </label>
                                 </div>
-                                
                                 <div id="validityInputs" class="hidden grid-cols-2 gap-3 mt-3 animate-fade-in border-t border-slate-200 pt-3">
                                     <div>
                                         <label class="label-text">Vencimento</label>
                                         <input type="date" id="itemExpiry" class="input-field text-xs bg-white">
                                     </div>
                                     <div>
-                                        <label class="label-text">Anotações / Obs</label>
+                                        <label class="label-text">Obs</label>
                                         <input type="text" id="itemNotes" class="input-field text-xs bg-white" placeholder="Ex: Lote 123">
                                     </div>
-                                    <p class="col-span-2 text-[10px] text-slate-400 italic text-center">* Itens próximos ao vencimento serão alertados no painel.</p>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </form>
@@ -445,7 +463,6 @@
     <div id="reportModal" class="fixed inset-0 bg-slate-900/50 hidden z-[200] overflow-y-auto backdrop-blur-sm">
         <div class="min-h-screen p-4 flex justify-center">
             <div id="reportContent" class="bg-white w-full max-w-4xl shadow-2xl rounded-lg overflow-hidden my-4 relative">
-                <!-- Header Relatório -->
                 <div class="bg-slate-900 text-white p-4 no-print flex justify-between items-center sticky top-0 z-10">
                     <h3 class="font-bold">Visualização de Impressão</h3>
                     <div class="flex gap-2">
@@ -453,19 +470,17 @@
                         <button onclick="closeReport()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded shadow text-sm">Fechar</button>
                     </div>
                 </div>
-
                 <div class="p-8 md:p-12">
                     <div class="border-b-4 border-slate-800 pb-4 mb-6 flex justify-between items-end">
                         <div>
                             <h1 class="text-3xl font-bold text-slate-900 uppercase tracking-tight">Relatório Gerencial</h1>
-                            <p class="text-slate-500 text-sm mt-1">Nexus Enterprise 3.8 - Controle de Estoque</p>
+                            <p class="text-slate-500 text-sm mt-1">Nexus Enterprise 4.0 - Controle de Estoque</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-slate-700">Emissão</p>
                             <p class="text-lg text-slate-900" id="reportDate">00/00/0000</p>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-4 gap-4 mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <div class="text-center">
                             <p class="text-xs text-slate-500 uppercase">Valor em Estoque</p>
@@ -484,26 +499,16 @@
                             <p class="text-xl font-bold text-emerald-600" id="rep-movs">-</p>
                         </div>
                     </div>
-
                     <div class="break-inside-avoid">
                         <h3 class="text-lg font-bold text-slate-800 mb-2 border-b border-slate-200 pb-1">Inventário Geral</h3>
                         <table class="w-full text-xs">
                             <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Produto</th>
-                                    <th>Localização</th>
-                                    <th class="text-right">Qtd</th>
-                                    <th class="text-right">Total (R$)</th>
-                                </tr>
+                                <tr><th>Código</th><th>Produto</th><th>Localização</th><th class="text-right">Qtd</th><th class="text-right">Total (R$)</th></tr>
                             </thead>
                             <tbody id="rep-general-table"></tbody>
                         </table>
                     </div>
-                    
-                    <div class="mt-8 text-center text-[10px] text-slate-400 pt-4 border-t border-slate-100">
-                        Documento gerado automaticamente.
-                    </div>
+                    <div class="mt-8 text-center text-[10px] text-slate-400 pt-4 border-t border-slate-100">Documento gerado automaticamente.</div>
                 </div>
             </div>
         </div>
@@ -516,9 +521,6 @@
             <button onclick="stopScanner()" class="bg-white/20 text-white w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-times"></i></button>
         </div>
         <div id="reader" class="w-full h-full bg-black"></div>
-        <div class="absolute bottom-10 left-0 w-full text-center text-white/80 text-sm pointer-events-none">
-            Aponte para o código de barras
-        </div>
     </div>
 
     <!-- Modal Dados e Licença -->
@@ -537,7 +539,7 @@
         <div class="bg-white rounded-xl max-w-sm w-full p-6">
             <h3 class="font-bold text-lg mb-4">Gerenciar Dados</h3>
             <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 text-xs text-blue-700">
-                <i class="fa-solid fa-info-circle mr-1"></i> Seus dados e fotos são salvos no navegador. O IndexedDB é usado para maior capacidade.
+                <i class="fa-solid fa-info-circle mr-1"></i> Banco de Dados IndexedDB Ativo (Sem limite de 5MB).
             </div>
             <button onclick="exportData()" class="w-full bg-blue-100 text-blue-700 py-3 rounded-lg font-bold mb-3 flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Backup (JSON)</button>
             <input type="file" id="importFile" class="hidden" onchange="importData(event)">
@@ -553,31 +555,178 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO E VARIÁVEIS DO SISTEMA ---
-        let items = JSON.parse(localStorage.getItem('nexus_items')) || [];
-        let movements = JSON.parse(localStorage.getItem('nexus_movements')) || []; 
-        let locations = JSON.parse(localStorage.getItem('nexus_locations')) || ['Estoque Central', 'Loja', 'Produção', 'Ajuste de Estoque', 'Fornecedor Externo'];
-        let db;
+        // --- CONFIGURAÇÃO GLOBAL ---
+        let items = [];
+        let movements = [];
+        let locations = [];
+        let db; // IndexedDB Instance
         let html5QrcodeScanner = null;
         let scanTarget = null;
         let tempImageBase64 = null;
         let isLicensed = false;
-        let deviceId = localStorage.getItem('nexus_device_id') || 'ID-' + Math.random().toString(36).substr(2,6).toUpperCase();
         let currentRole = null;
+        
+        // --- IDENTIFICAÇÃO DO DISPOSITIVO ---
+        let deviceId = localStorage.getItem('nexus_device_id');
+        if (!deviceId) {
+            deviceId = 'ID-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            localStorage.setItem('nexus_device_id', deviceId);
+        }
 
-        localStorage.setItem('nexus_device_id', deviceId);
+        // --- SISTEMA TRIAL (3 HORAS) ---
+        const _TRIAL_LIMIT_MS = 3 * 60 * 60 * 1000; // 3 Horas
+        
+        function initTrialSystem() {
+            let firstRun = localStorage.getItem('nx_first_run_ts');
+            if(!firstRun) {
+                firstRun = Date.now();
+                localStorage.setItem('nx_first_run_ts', firstRun);
+            }
+            
+            setInterval(() => {
+                checkTrialStatus();
+            }, 60000); // Checa a cada minuto
+            
+            checkTrialStatus();
+        }
+
+        function checkTrialStatus() {
+            if (isLicensed) {
+                document.getElementById('trialTimerDisplay').innerText = "Licença Ativa";
+                document.getElementById('lockScreen').classList.add('hidden');
+                return;
+            }
+
+            const firstRun = parseInt(localStorage.getItem('nx_first_run_ts'));
+            const now = Date.now();
+            const elapsed = now - firstRun;
+            const remaining = _TRIAL_LIMIT_MS - elapsed;
+
+            if (remaining <= 0) {
+                // BLOQUEIO TOTAL
+                document.getElementById('lockScreen').classList.remove('hidden');
+                document.getElementById('lockDeviceId').innerText = deviceId;
+                document.getElementById('loginOverlay').classList.add('hidden'); // Remove login se estiver visível
+            } else {
+                // Formatar tempo restante
+                const hours = Math.floor(remaining / (1000 * 60 * 60));
+                const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                document.getElementById('trialTimerDisplay').innerText = `Teste: Restam ${hours}h ${mins}m`;
+            }
+        }
+
+        function attemptUnlock() {
+            const key = document.getElementById('lockLicenseInput').value.trim();
+            // Tenta validar usando a função interna (bypassing permission checks)
+            if(_validateKeyLogic(key)) {
+                localStorage.setItem(_0xsec[1], key);
+                checkLicense(); // Re-verifica globalmente
+                if(isLicensed) {
+                    document.getElementById('lockScreen').classList.add('hidden');
+                    alert("Sistema desbloqueado com sucesso!");
+                    window.location.reload();
+                }
+            } else {
+                alert("Licença inválida ou expirada.");
+            }
+        }
 
         // =========================================================================
-        //  MÓDULO DE SEGURANÇA (HÍBRIDO - LEGADO E NOVO)
+        //  BANCO DE DADOS ROBUSTO (IndexedDB Wrapper)
+        // =========================================================================
+        const DB_NAME = 'NexusEnterpriseDB';
+        const DB_VERSION = 2; // Versão incrementada
+        
+        const dbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            
+            request.onupgradeneeded = (e) => {
+                const d = e.target.result;
+                if (!d.objectStoreNames.contains('images')) d.createObjectStore('images', { keyPath: 'id' });
+                if (!d.objectStoreNames.contains('data')) d.createObjectStore('data', { keyPath: 'key' });
+            };
+            
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onerror = (e) => reject("Erro ao abrir DB");
+        });
+
+        // Funções de Persistência Híbrida (Tenta IDB, fallback localStorage se necessário, mas prioriza IDB para evitar limite)
+        async function loadAllData() {
+            try {
+                await dbPromise;
+                
+                // Carregar Configurações Principais (Items, Movements, Locations)
+                const tx = db.transaction(['data'], 'readonly');
+                const store = tx.objectStore('data');
+                
+                const pItems = new Promise(r => { const req = store.get('items'); req.onsuccess = () => r(req.result ? req.result.val : null); });
+                const pMovs = new Promise(r => { const req = store.get('movements'); req.onsuccess = () => r(req.result ? req.result.val : null); });
+                const pLocs = new Promise(r => { const req = store.get('locations'); req.onsuccess = () => r(req.result ? req.result.val : null); });
+                
+                const [dbItems, dbMovs, dbLocs] = await Promise.all([pItems, pMovs, pLocs]);
+                
+                // Se IDB estiver vazio, tenta migrar do LocalStorage (Legado)
+                if (!dbItems && localStorage.getItem('nexus_items')) {
+                    console.log("Migrando dados do LocalStorage para IndexedDB...");
+                    items = JSON.parse(localStorage.getItem('nexus_items')) || [];
+                    movements = JSON.parse(localStorage.getItem('nexus_movements')) || [];
+                    locations = JSON.parse(localStorage.getItem('nexus_locations')) || ['Estoque Central'];
+                    await saveData(); // Salva no IDB
+                } else {
+                    items = dbItems || [];
+                    movements = dbMovs || [];
+                    locations = dbLocs || ['Estoque Central', 'Loja', 'Produção'];
+                }
+                
+                document.getElementById('dbLoading').classList.add('opacity-0');
+                setTimeout(() => document.getElementById('dbLoading').remove(), 500);
+                document.getElementById('loginOverlay').classList.remove('hidden');
+
+            } catch (err) {
+                alert("Erro crítico ao carregar banco de dados: " + err);
+                document.getElementById('dbLoading').innerText = "Erro ao carregar dados.";
+            }
+        }
+
+        async function saveData() {
+            // Salva no IndexedDB (Suporta Gigabytes)
+            if(db) {
+                const tx = db.transaction(['data'], 'readwrite');
+                const store = tx.objectStore('data');
+                store.put({ key: 'items', val: items });
+                store.put({ key: 'movements', val: movements });
+                store.put({ key: 'locations', val: locations });
+            }
+            
+            // Backup minimalista no LocalStorage apenas para metadados (opcional, mantendo compatibilidade leve)
+            updateDashboard();
+            updateLicenseUI();
+        }
+
+        const saveImg = (id, data) => db.transaction(['images'], 'readwrite').objectStore('images').put({id: String(id), data});
+        const getImg = (id) => new Promise(resolve => {
+            if(!db) return resolve(null);
+            const req = db.transaction(['images'], 'readonly').objectStore('images').get(String(id));
+            req.onsuccess = (e) => resolve(e.target.result ? e.target.result.data : null);
+            req.onerror = () => resolve(null);
+        });
+        const delImg = (id) => db.transaction(['images'], 'readwrite').objectStore('images').delete(String(id));
+
+        // =========================================================================
+        //  MÓDULO DE SEGURANÇA & LICENÇA (OFUSCADO)
         // =========================================================================
         
-        var _0xsec = ['\x61\x64\x6D\x69\x6E', '\x6E\x65\x78\x75\x73\x5F\x6C\x69\x63\x65\x6E\x73\x65\x5F\x6B\x65\x79', '\x4E\x45\x58\x55\x53', '\x54\x6A\x4E\x34\x64\x58\x4E\x40\x51\x57\x52\x74\x4D\x6A\x41\x79\x4E\x53\x45\x3D'];
+        // Strings Ofuscadas: 
+        // 0: admin, 1: nexus_license_key, 2: NEXUS_ENTERPRISE, 3: (Senha Hash), 4: NX_SECURE_V4_8821
+        var _0xsec = ['\x61\x64\x6D\x69\x6E', '\x6E\x65\x78\x75\x73\x5F\x6C\x69\x63\x65\x6E\x73\x65\x5F\x6B\x65\x79', '\x4E\x45\x58\x55\x53', '\x54\x6A\x4E\x34\x64\x58\x4E\x40\x51\x57\x52\x74\x4D\x6A\x41\x79\x4E\x53\x45\x3D', 'NX_SECURE_V4_8821'];
         
         function confirmAdminLogin() {
-            // Verifica senha
             const input = document.getElementById('adminPassInput').value;
             const _h = btoa(input);
-            if(_h === _0xsec[3]) { // Senha hashada
+            if(_h === _0xsec[3]) {
                 closePasswordModal();
                 completeLogin(_0xsec[0]);
             } else {
@@ -587,93 +736,63 @@
             }
         }
 
-        function checkLicense() {
-            const saved = localStorage.getItem(_0xsec[1]); // nexus_license_key
-            
-            // 1. Validação LEGADO (Vitalício - Chave curta de 10 chars)
-            // Algoritmo: btoa(deviceId + "NEXUS").substring(0,10)
-            const legacyExpected = btoa(deviceId + _0xsec[2]).substring(0,10).toUpperCase();
-            
-            if(saved === legacyExpected) {
-                isLicensed = true;
-                updateLicenseUI();
-                return;
-            }
-
-            // 2. Validação V2 (Mensal/Anual/Custom - Chave Longa com Data)
-            // Algoritmo: Base64(deviceId | DATE | NEXUS_V2)
+        function _validateKeyLogic(keyStr) {
             try {
-                if (!saved) throw new Error();
-                const decoded = atob(saved);
-                const parts = decoded.split('|'); // ID | DATE | SALT
+                if (!keyStr) return false;
+                const decoded = atob(keyStr);
+                const parts = decoded.split('|'); // ID | DATE | SIGNATURE
                 
-                // Verifica se é o formato novo: ID correto + Salt correto ('NEXUS_V2')
-                if(parts[0] === deviceId && parts[2] === 'NEXUS_V2') {
-                    const expiry = new Date(parts[1]);
-                    const today = new Date();
-                    today.setHours(0,0,0,0);
-                    
-                    if(expiry >= today) {
-                        isLicensed = true;
-                        // Você pode adicionar um aviso visual se faltarem poucos dias
-                        const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                        if(diffDays <= 5) showToast(`Licença vence em ${diffDays} dias`);
-                    } else {
-                        isLicensed = false; // Venceu
-                        // Não mostramos toast aqui para não floodar na inicialização
-                    }
-                } else {
-                    isLicensed = false;
+                // Validação de Integridade
+                if (parts.length !== 3) return false;
+                if (parts[0] !== deviceId) return false; // Bloqueia uso em outro PC
+                
+                // Validar Assinatura (Hashing simples para conferir se data não foi alterada)
+                const rawCheck = parts[0] + "|" + parts[1] + "|" + _0xsec[4];
+                let hash = 0;
+                for (let i = 0; i < rawCheck.length; i++) {
+                    const char = rawCheck.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
                 }
+                const expectedSig = Math.abs(hash).toString(16);
+                
+                if (parts[2] !== expectedSig) return false;
+
+                // Validar Data
+                const expiry = new Date(parts[1]);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                
+                return expiry >= today;
             } catch(e) {
-                isLicensed = false;
+                return false;
             }
+        }
+
+        function checkLicense() {
+            const saved = localStorage.getItem(_0xsec[1]);
+            isLicensed = _validateKeyLogic(saved);
             
+            // UI Updates
             document.getElementById('deviceIdDisplay').innerText = deviceId;
             updateLicenseUI();
+            checkTrialStatus(); // Re-verifica o trial
         }
 
         function activateLicense() {
             if(currentRole !== _0xsec[0]) return alert("Apenas administradores podem ativar.");
-            const val = document.getElementById('licenseInput').value.trim(); // Trim importante para evitar espaços extras
+            const val = document.getElementById('licenseInput').value.trim();
             
-            // Verifica imediatamente se é válida (seja Legado ou V2)
-            let isValid = false;
-            let message = "Chave inválida";
-
-            // Teste Legado
-            const legacyExpected = btoa(deviceId + _0xsec[2]).substring(0,10).toUpperCase();
-            if (val === legacyExpected) {
-                isValid = true;
-                message = "Licença Vitalícia Ativada!";
-            } else {
-                // Teste V2
-                try {
-                    const decoded = atob(val);
-                    const parts = decoded.split('|');
-                    if(parts[0] === deviceId && parts[2] === 'NEXUS_V2') {
-                         const expiry = new Date(parts[1]);
-                         const today = new Date();
-                         today.setHours(0,0,0,0);
-                         if (expiry >= today) {
-                             isValid = true;
-                             message = "Licença PRO Ativada até " + parts[1].split('-').reverse().join('/');
-                         } else {
-                             message = "Esta chave é válida, mas já expirou em " + parts[1];
-                         }
-                    }
-                } catch(e) {}
-            }
-
-            if(isValid) {
+            if (_validateKeyLogic(val)) {
                 localStorage.setItem(_0xsec[1], val);
                 checkLicense();
                 document.getElementById('licenseModal').classList.add('hidden');
-                showToast(message);
+                showToast("Licença PRO Ativada com Sucesso!");
             } else {
-                alert(message);
+                alert("Chave inválida para este dispositivo ou expirada.");
             }
         }
+        
         // =========================================================================
 
         function selectRole(role) {
@@ -695,6 +814,25 @@
             document.getElementById('loginOverlay').classList.add('hidden');
             updateUIForRole();
             showToast(`Bem-vindo, ${role === 'admin' ? 'ADMINISTRADOR' : 'OPERADOR'}`);
+            
+            // Lógica de instalação PWA Melhorada
+            const btn = document.getElementById('installAppBtn');
+            
+            // 1. Tenta usar o evento nativo se disponível
+            if(deferredPrompt) {
+                btn.onclick = async () => {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        deferredPrompt = null;
+                    }
+                };
+            } else {
+                // 2. Fallback para instalação manual
+                btn.onclick = () => {
+                    alert("Para instalar:\n\n1. No Chrome/Android: Toque nos 3 pontinhos -> 'Instalar aplicativo' ou 'Adicionar à tela inicial'.\n\n2. No iOS (Safari): Toque em Compartilhar -> 'Adicionar à Tela de Início'.\n\n3. No PC: Procure o ícone de instalação na barra de endereço.");
+                };
+            }
         }
 
         document.getElementById('adminPassInput').addEventListener('keypress', function (e) {
@@ -752,20 +890,6 @@
             else return { label: 'Validade OK', colorClass: 'bg-slate-100 text-slate-500', borderClass: 'border-slate-200', days: diffDays, status: 'ok' };
         }
 
-        const initDB = () => {
-            const req = indexedDB.open('NexusDB', 1);
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore('images', { keyPath: 'id' });
-            req.onsuccess = (e) => db = e.target.result;
-        };
-        const saveImg = (id, data) => db.transaction(['images'], 'readwrite').objectStore('images').put({id: String(id), data});
-        const getImg = (id) => new Promise(resolve => {
-            if(!db) return resolve(null);
-            const req = db.transaction(['images'], 'readonly').objectStore('images').get(String(id));
-            req.onsuccess = (e) => resolve(e.target.result ? e.target.result.data : null);
-            req.onerror = () => resolve(null);
-        });
-        const delImg = (id) => db.transaction(['images'], 'readwrite').objectStore('images').delete(String(id));
-
         function updateLicenseUI() {
             if(isLicensed) {
                 document.getElementById('licenseStatusBanner').classList.add('hidden');
@@ -776,7 +900,6 @@
                 document.getElementById('licenseDot').classList.replace('bg-emerald-500', 'bg-red-500');
                 document.getElementById('licenseDot').classList.add('animate-pulse');
             }
-            document.getElementById('freeCountDisplay').innerText = items.length;
         }
 
         function openLocationsModal() {
@@ -807,7 +930,7 @@
             const input = document.getElementById('newLocationInput');
             if(input.value.trim()) {
                 locations.push(input.value.trim());
-                localStorage.setItem('nexus_locations', JSON.stringify(locations));
+                saveData();
                 input.value = '';
                 renderLocationsList();
             }
@@ -816,7 +939,7 @@
         function removeLocation(index) {
              if(confirm('Tem certeza que deseja remover este local?')) {
                 locations.splice(index, 1);
-                localStorage.setItem('nexus_locations', JSON.stringify(locations));
+                saveData();
                 renderLocationsList();
                 showToast("Local removido.");
             }
@@ -926,7 +1049,6 @@
                 inputs.classList.remove('grid');
                 container.classList.add('bg-slate-50', 'border-slate-200');
                 container.classList.remove('bg-indigo-50', 'border-indigo-200');
-                
                 document.getElementById('itemExpiry').value = '';
                 document.getElementById('itemNotes').value = '';
             }
@@ -1051,7 +1173,6 @@
             } else {
                 imgDiv.innerHTML = '<i class="fa-solid fa-box text-slate-400"></i>';
             }
-
             document.getElementById('movQty').focus();
         }
 
@@ -1112,9 +1233,8 @@
                 balanceAfter: items[itemIdx].qty
             });
 
-            if(movements.length > 500) movements.shift();
+            if(movements.length > 1000) movements.shift(); // Aumentado limite para 1000
 
-            localStorage.setItem('nexus_movements', JSON.stringify(movements));
             saveData();
             renderItems();
             closeMovementModal();
@@ -1194,12 +1314,6 @@
         }
 
         function closeReport() { document.getElementById('reportModal').classList.add('hidden'); }
-
-        function saveData() {
-            localStorage.setItem('nexus_items', JSON.stringify(items));
-            updateDashboard();
-            updateLicenseUI();
-        }
 
         function updateDashboard() {
             let valTotal = 0;
@@ -1361,7 +1475,7 @@
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => {
+            reader.onload = async (ev) => {
                 try {
                     const data = JSON.parse(ev.target.result);
                     if(data.items && Array.isArray(data.items)) {
@@ -1369,31 +1483,29 @@
                             items = data.items;
                             movements = data.movements || [];
                             locations = data.locations || [];
-                            saveData();
-                            localStorage.setItem('nexus_movements', JSON.stringify(movements));
-                            localStorage.setItem('nexus_locations', JSON.stringify(locations));
+                            await saveData();
                             renderItems();
                             document.getElementById('dataModal').classList.add('hidden');
                             showToast("Backup Restaurado!");
                         }
                     } else alert("Formato inválido");
-                } catch(err) { alert("Erro ao ler arquivo"); }
+                } catch(err) { alert("Erro ao ler arquivo: " + err); }
             };
             reader.readAsText(file);
         }
 
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Botão só aparece após login
+        });
+
         window.addEventListener('load', () => {
-            initDB();
+            initTrialSystem();
+            loadAllData();
             checkLicense();
-            
-            const lastBackup = localStorage.getItem('nexus_last_backup_date');
-            if(lastBackup) {
-                const diff = new Date() - new Date(lastBackup);
-                const hours = diff / (1000 * 60 * 60);
-                if(hours > 24 && currentRole === 'admin') {
-                    setTimeout(() => showToast("Lembrete: Faça seu backup diário!"), 2000);
-                }
-            }
         });
 
         const style = document.createElement('style');
