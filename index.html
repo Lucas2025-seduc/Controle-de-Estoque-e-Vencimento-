@@ -9,14 +9,14 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="description" content="Sistema profissional de gestão de estoque com controle de permissões.">
     
-    <!-- MANIFESTO EXTERNO (Corrigido) -->
+    <!-- MANIFESTO EXTERNO -->
     <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ControleEstoque">
     
-    <!-- Ícones apontando para arquivos locais -->
+    <!-- Ícones -->
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/png" href="icon-192.png">
     
@@ -168,8 +168,8 @@
             </div>
             
             <div class="flex gap-2 md:gap-3 items-center flex-wrap justify-center">
-                <!-- Botão de Instalação PWA -->
-                <button id="installAppBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg hover:shadow-purple-500/30 text-xs md:text-sm">
+                <!-- Botão de Instalação PWA (Visível apenas se disponível ou para instrução) -->
+                <button id="installAppBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-bold transition hidden items-center gap-2 shadow-lg hover:shadow-purple-500/30 text-xs md:text-sm animate-fade-in">
                     <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Instalar App</span>
                 </button>
 
@@ -975,6 +975,18 @@
             // Agora, o evento click verifica o estado ATUAL do deferredPrompt.
             
             const btn = document.getElementById('installAppBtn');
+            
+            // Mostrar botão se deferredPrompt estiver disponível
+            if (deferredPrompt) {
+                btn.classList.remove('hidden');
+                btn.classList.add('flex');
+            } else {
+                // Se não estiver disponível (ex: já instalado), mantém hidden ou mostra aviso
+                // Para debug, vamos deixar visível mas com aviso
+                 btn.classList.remove('hidden');
+                 btn.classList.add('flex');
+            }
+
             btn.onclick = async () => {
                 if(deferredPrompt) {
                     deferredPrompt.prompt();
@@ -982,6 +994,7 @@
                     if (outcome === 'accepted') {
                         deferredPrompt = null;
                         console.log('Instalação aceita');
+                        btn.classList.add('hidden'); // Esconde após instalar
                     }
                 } else {
                     // Fallback se o navegador não suportar ou já estiver instalado
@@ -1666,8 +1679,21 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Botão só aparece após login
+            // Ocultar se já instalado não é possível detectar facilmente aqui, mas podemos usar o botão apenas quando o evento disparar
         });
+
+        // --- REGISTRO DO SERVICE WORKER (CRÍTICO PARA PWA) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('SW registrado com sucesso:', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('Falha ao registrar SW:', err);
+                    });
+            });
+        }
 
         window.addEventListener('load', () => {
             initTrialSystem();
