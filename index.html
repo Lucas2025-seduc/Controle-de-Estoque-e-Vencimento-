@@ -876,10 +876,19 @@
                 if (parts[2] !== expectedSig) return false;
 
                 const expiry = new Date(parts[1]);
-                const today = new Date();
-                today.setHours(0,0,0,0);
+                const now = new Date();
                 
-                return expiry >= today;
+                // NOVA LÓGICA DE VALIDAÇÃO HÍBRIDA
+                // Se a string de data tiver mais de 10 caracteres (formato ISO com hora), valida o tempo exato
+                if (parts[1].length > 10) {
+                    return expiry > now;
+                } else {
+                    // Lógica antiga (apenas data), valida até o final do dia
+                    now.setHours(0,0,0,0);
+                    // Para datas sem hora (YYYY-MM-DD), o objeto Date é UTC 00:00.
+                    // Para garantir que vença apenas no dia seguinte, comparamos >= hoje zerado.
+                    return expiry >= now;
+                }
             } catch(e) {
                 return false;
             }
@@ -904,10 +913,17 @@
                     const decoded = atob(saved);
                     const parts = decoded.split('|');
                     if(parts[1]) {
-                        // Formata YYYY-MM-DD para DD/MM/YYYY
-                        const dateParts = parts[1].split('-');
-                        const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-                        document.getElementById('licenseExpiryDisplay').innerText = `Válido até: ${formattedDate}`;
+                        const expiryDate = new Date(parts[1]);
+                        
+                        if (parts[1].length > 10) {
+                            // Exibe Data e Hora para licenças curtas
+                            document.getElementById('licenseExpiryDisplay').innerText = `Válido até: ${expiryDate.toLocaleString()}`;
+                        } else {
+                            // Exibe apenas Data para licenças longas (ajustando fuso horário manual para evitar erro visual)
+                            const dateParts = parts[1].split('-');
+                            const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                            document.getElementById('licenseExpiryDisplay').innerText = `Válido até: ${formattedDate}`;
+                        }
                     }
                 } catch(e) {}
                 
